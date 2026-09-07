@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Печь — лови начинку</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600&family=Bowlby+One&display=swap" rel="stylesheet">
+<style>
+:root{
+  --soot:#241811;
+  --soot-deep:#160E09;
+  --brick:#7A2A1C;
+  --ember:#F07A22;
+  --ember-hot:#FFB03B;
+  --dough:#F3E3C6;
+  --basil:#4E8A3C;
+  --ink:#22160F;
+  --muted:#7A6353;
+  --page:#EFE7DA;
+  --card:#FCF8F1;
+  --hair:#DCCFBC;
+}
+
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+
+body{
+  margin:0;background:var(--soot-deep);
+  font-family:'Rubik',system-ui,-apple-system,'Segoe UI',sans-serif;
+  font-size:16px;line-height:1.5;color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  display:flex;justify-content:center;
+}
+
+.app{
+  width:100%;max-width:430px;min-height:100dvh;
+  background:var(--page);position:relative;overflow:hidden;
+}
+
+/* ─────────── шапка ─────────── */
+.topbar{
+  background:var(--soot);padding:14px 20px;
+  display:flex;align-items:center;gap:11px;
+}
+.logo{width:31px;height:31px;flex:none;}
+.name{font-family:'Bowlby One',cursive;font-size:19px;color:var(--dough);letter-spacing:.02em;}
+.meta{margin-left:auto;font-size:12.5px;color:#B9A08C;}
+
+/* ─────────── игра ─────────── */
+.oven{
+  background:radial-gradient(120% 70% at 50% 100%, #4A2513 0%, var(--soot) 55%, var(--soot-deep) 100%);
+  padding:6px 18px 26px;border-radius:0 0 30px 30px;text-align:center;
+}
+.gtitle{
+  font-family:'Bowlby One',cursive;font-size:27px;line-height:1.1;
+  color:var(--dough);margin:10px 0 6px;
+}
+.gsub{margin:0 auto 18px;max-width:29ch;font-size:13.5px;color:#BFA48D;}
+
+.panelbar{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px;}
+.panelbar div{background:rgba(255,255,255,.07);border-radius:14px;padding:9px 6px;}
+.panelbar .lbl{display:block;font-size:11.5px;color:#B9A08C;margin-bottom:1px;}
+.panelbar .val{
+  display:block;font-family:'Bowlby One',cursive;font-size:21px;
+  color:var(--dough);font-variant-numeric:tabular-nums;
+}
+
+.arena{
+  position:relative;width:100%;
+  border-radius:22px 22px 18px 18px;
+  overflow:hidden;background:#150D08;
+  box-shadow:inset 0 0 0 3px #3A2416, 0 12px 26px rgba(0,0,0,.4);
+  touch-action:none;
+}
+.arena canvas{display:block;width:100%;height:auto;}
+
+.curtain{
+  position:absolute;inset:0;
+  background:rgba(19,11,6,.82);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  padding:20px;
+}
+.curtain.gone{display:none;}
+.curtain p{margin:0;max-width:24ch;font-size:13.5px;color:#C6AC94;}
+.play{
+  border:0;border-radius:17px;padding:15px 34px;
+  background:var(--ember);color:#2A1408;
+  font-family:'Bowlby One',cursive;font-size:19px;cursor:pointer;
+  box-shadow:0 5px 0 #B4551220;
+}
+.play:focus-visible{outline:3px solid var(--dough);outline-offset:3px;}
+
+.hint{margin:14px 0 0;font-size:12.5px;color:#9E846E;}
+
+/* ─────────── секции ─────────── */
+.sect{padding:26px 20px 0;}
+.sect h3{font-family:'Bowlby One',cursive;font-size:19px;margin:0 0 4px;}
+.sect .sub{margin:0 0 15px;font-size:13.5px;color:var(--muted);}
+
+.grades{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;}
+.grades li{
+  display:flex;align-items:center;gap:13px;
+  background:var(--card);border-radius:15px;padding:12px 15px;
+}
+.grades .num{font-family:'Bowlby One',cursive;font-size:20px;color:var(--brick);min-width:54px;}
+.grades .txt{font-size:14.5px;font-weight:500;}
+.grades .sml{display:block;font-size:12.5px;color:var(--muted);font-weight:400;}
+
+.parts{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,1fr);gap:9px;}
+.parts li{
+  background:var(--card);border-radius:14px;padding:11px 12px;
+  display:flex;align-items:center;gap:10px;font-size:13.5px;
+}
+.parts svg{flex:none;}
+.parts b{font-weight:500;}
+.parts em{display:block;font-style:normal;font-size:12px;color:var(--muted);}
+
+.fine{margin:24px 20px 0;padding:15px 17px;background:var(--hair);border-radius:16px;}
+.fine p{margin:0;font-size:12.5px;line-height:1.55;color:#6A5748;}
+
+.foot{
+  margin-top:24px;padding:20px 20px calc(26px + env(safe-area-inset-bottom));
+  background:var(--soot);color:#B9A08C;
+  border-radius:30px 30px 0 0;font-size:12.5px;text-align:center;
+}
+.foot strong{display:block;color:var(--dough);font-family:'Bowlby One',cursive;font-size:16px;margin-bottom:4px;}
+
+/* ─────────── итог ─────────── */
+.shade{
+  position:fixed;inset:0;background:rgba(14,8,4,.78);
+  backdrop-filter:blur(4px);opacity:0;pointer-events:none;
+  transition:opacity .26s ease;z-index:20;
+}
+.shade.on{opacity:1;pointer-events:auto;}
+.result{
+  position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:430px;
+  background:var(--card);border-radius:28px 28px 0 0;
+  padding:26px 24px calc(24px + env(safe-area-inset-bottom));
+  transform:translateY(102%);
+  transition:transform .36s cubic-bezier(.2,.9,.3,1);
+  z-index:21;text-align:center;
+}
+.shade.on + .result{transform:translateY(0);}
+.result canvas{width:96px;height:96px;margin:0 auto 10px;display:block;}
+.result h2{font-family:'Bowlby One',cursive;font-size:26px;line-height:1.15;margin:0 0 6px;}
+.result .line{margin:0 0 16px;font-size:14.5px;color:var(--muted);}
+.stub{border:2px dashed var(--hair);border-radius:16px;padding:14px;margin-bottom:15px;background:#FFFDF8;}
+.stub .cd{display:block;font-family:'Bowlby One',cursive;font-size:22px;letter-spacing:.05em;}
+.stub .lim{display:block;font-size:12.5px;color:var(--muted);margin-top:3px;}
+.retry{
+  width:100%;border:0;border-radius:16px;padding:15px;
+  background:var(--brick);color:var(--dough);
+  font-family:'Rubik',sans-serif;font-weight:600;font-size:16px;cursor:pointer;
+}
+.retry:focus-visible{outline:3px solid var(--ember);outline-offset:2px;}
+
+@media (prefers-reduced-motion:reduce){
+  .result,.shade{transition-duration:.01ms;}
+}
+
+/* прокрутка живёт внутри приложения, а не в документе:
+   так свайп вниз не закрывает окно просмотрщика */
+html,body{height:100dvh;overflow:hidden;overscroll-behavior:none;}
+.app{
+  height:100dvh;min-height:0;
+  overflow-y:auto;overflow-x:hidden;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="topbar">
+    <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+      <circle cx="16" cy="16" r="16" fill="#F07A22"/>
+      <path d="M16 5 L27 26 H5 Z" fill="#F3E3C6"/>
+      <circle cx="16" cy="19" r="2.2" fill="#B0301E"/>
+      <circle cx="11.5" cy="23" r="1.8" fill="#B0301E"/>
+      <circle cx="20.5" cy="23" r="1.8" fill="#4E8A3C"/>
+    </svg>
+    <span class="name">Печь</span>
+    <span class="meta">Неаполитанская пицца</span>
+  </header>
+
+  <section class="oven">
+    <h1 class="gtitle">Лови начинку</h1>
+    <p class="gsub">Тридцать секунд. Ведите основу пальцем и ловите продукты. Угольки из печи лучше пропускать.</p>
+
+    <div class="panelbar">
+      <div><span class="lbl">Осталось</span><span class="val" id="clock">0:30</span></div>
+      <div><span class="lbl">Поймано</span><span class="val" id="score">0</span></div>
+    </div>
+
+    <div class="arena" id="arena">
+      <canvas id="cv"></canvas>
+      <div class="curtain" id="curtain">
+        <p>Держите палец на экране и двигайте основу влево-вправо.</p>
+        <button class="play" id="play">Начать</button>
+      </div>
+    </div>
+
+    <p class="hint">На компьютере работают стрелки влево и вправо.</p>
+  </section>
+
+  <section class="sect">
+    <h3>Что даёт результат</h3>
+    <p class="sub">Скидка на любую пиццу из меню, считается по числу пойманных продуктов.</p>
+    <ul class="grades">
+      <li><span class="num">25%</span><span class="txt">От 26 продуктов<span class="sml">Уровень повара</span></span></li>
+      <li><span class="num">15%</span><span class="txt">18–25 продуктов<span class="sml">Уверенная рука</span></span></li>
+      <li><span class="num">10%</span><span class="txt">10–17 продуктов<span class="sml">Неплохо для первого раза</span></span></li>
+      <li><span class="num">5%</span><span class="txt">Меньше 10<span class="sml">Скидка всё равно ваша</span></span></li>
+    </ul>
+  </section>
+
+  <section class="sect">
+    <h3>Что падает</h3>
+    <p class="sub">Продукты добавляют очко, уголёк отнимает два.</p>
+    <ul class="parts" id="parts"></ul>
+  </section>
+
+  <div class="fine">
+    <p>Одна игра со скидкой в день на гостя. Код действует трое суток, на одну пиццу, в зале и на вынос. Не суммируется с комбо-предложениями и акцией «две по цене одной».</p>
+  </div>
+
+  <footer class="foot">
+    <strong>Пиццерия Печь</strong>
+    Гоголя, 3 — ежедневно с 11:00 до 23:00
+  </footer>
+
+</div>
+
+<div class="shade" id="shade"></div>
+<section class="result" id="result" role="dialog" aria-modal="true" aria-labelledby="done">
+  <canvas id="pie" width="192" height="192"></canvas>
+  <h2 id="done">—</h2>
+  <p class="line" id="line">—</p>
+  <div class="stub">
+    <span class="cd" id="cd">—</span>
+    <span class="lim">Действует 3 дня с сегодняшнего дня</span>
+  </div>
+  <button class="retry" id="retry">Играть ещё раз</button>
+</section>
+
+<script>
+/* ═══ 1. Продукты ═══
+   good: приносит очко. Форма рисуется кодом, картинок нет.  */
+const ITEMS = [
+  { id:'tomato',  name:'Томат',     hint:'+1',  good:true,  r:15 },
+  { id:'mozza',   name:'Моцарелла', hint:'+1',  good:true,  r:15 },
+  { id:'basil',   name:'Базилик',   hint:'+1',  good:true,  r:15 },
+  { id:'pepper',  name:'Пепперони', hint:'+1',  good:true,  r:15 },
+  { id:'olive',   name:'Оливка',    hint:'+1',  good:true,  r:13 },
+  { id:'ember',   name:'Уголёк',    hint:'−2',  good:false, r:14 }
+];
+
+/* ═══ 2. Рисование продуктов ═══ */
+function drawItem(ctx, id, x, y, r){
+  ctx.save();
+  ctx.translate(x, y);
+  switch(id){
+    case 'tomato':
+      ctx.fillStyle = '#C6301C';
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.28)';
+      ctx.beginPath(); ctx.arc(-r*0.3, -r*0.35, r*0.28, 0, 7); ctx.fill();
+      ctx.fillStyle = '#3F7A31';
+      ctx.beginPath(); ctx.ellipse(0, -r*0.95, r*0.42, r*0.24, 0, 0, 7); ctx.fill();
+      break;
+    case 'mozza':
+      ctx.fillStyle = '#FBF4E4';
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.fill();
+      ctx.strokeStyle = '#DFD0B4'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, r*0.62, 0, 7); ctx.stroke();
+      break;
+    case 'basil':
+      ctx.fillStyle = '#4E8A3C';
+      ctx.beginPath();
+      ctx.moveTo(0, -r);
+      ctx.quadraticCurveTo(r, -r*0.2, 0, r);
+      ctx.quadraticCurveTo(-r, -r*0.2, 0, -r);
+      ctx.fill();
+      ctx.strokeStyle = '#2F5C24'; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(0, -r*0.8); ctx.lineTo(0, r*0.8); ctx.stroke();
+      break;
+    case 'pepper':
+      ctx.fillStyle = '#A5251C';
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.fill();
+      ctx.fillStyle = '#D6564A';
+      [[-.35,-.3],[.3,-.15],[-.1,.35],[.4,.4]].forEach(p => {
+        ctx.beginPath(); ctx.arc(p[0]*r, p[1]*r, r*0.16, 0, 7); ctx.fill();
+      });
+      break;
+    case 'olive':
+      ctx.fillStyle = '#2E2A34';
+      ctx.beginPath(); ctx.ellipse(0, 0, r, r*0.82, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = '#8E5A2B';
+      ctx.beginPath(); ctx.arc(0, 0, r*0.32, 0, 7); ctx.fill();
+      break;
+    case 'ember':
+      ctx.fillStyle = '#3A3129';
+      ctx.beginPath();
+      ctx.moveTo(-r, 0); ctx.lineTo(-r*0.4, -r); ctx.lineTo(r*0.5, -r*0.7);
+      ctx.lineTo(r, r*0.3); ctx.lineTo(0, r); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#F0761F';
+      ctx.beginPath(); ctx.arc(-r*0.2, -r*0.1, r*0.3, 0, 7); ctx.fill();
+      ctx.fillStyle = '#FFC24A';
+      ctx.beginPath(); ctx.arc(r*0.25, r*0.15, r*0.18, 0, 7); ctx.fill();
+      break;
+  }
+  ctx.restore();
+}
+
+/* карточки «что падает» */
+const partsEl = document.getElementById('parts');
+ITEMS.forEach(it => {
+  const li = document.createElement('li');
+  const c = document.createElement('canvas');
+  c.width = c.height = 72; c.style.width = c.style.height = '36px';
+  const cx = c.getContext('2d'); cx.scale(2,2);
+  drawItem(cx, it.id, 18, 18, 15);
+  li.appendChild(c);
+  const t = document.createElement('span');
+  t.innerHTML = `<b>${it.name}</b><em>${it.hint}</em>`;
+  li.appendChild(t);
+  partsEl.appendChild(li);
+});
+
+/* ═══ 3. Игровое поле ═══ */
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const arena = document.getElementById('arena');
+let W = 0, H = 0;
+
+function fit(){
+  W = arena.clientWidth;
+  H = Math.round(Math.min(430, Math.max(340, W * 1.18)));
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = W * dpr; cv.height = H * dpr;
+  cv.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  base.y = H - 46;
+  base.x = Math.min(Math.max(base.x, base.r), W - base.r);
+}
+
+/* основа для пиццы — её ведёт игрок */
+const base = { x:0, y:0, r:40, target:0 };
+
+const ROUND = 30;                      // длительность партии в секундах
+let drops = [], score = 0, left = ROUND, running = false;
+let lastFrame = 0, spawnAcc = 0, secAcc = 0, flash = 0, topping = [];
+
+/* ═══ 4. Управление ═══ */
+function aim(clientX){
+  const box = arena.getBoundingClientRect();
+  base.target = Math.min(Math.max(clientX - box.left, base.r), W - base.r);
+}
+arena.addEventListener('pointerdown', e => { aim(e.clientX); arena.setPointerCapture(e.pointerId); });
+arena.addEventListener('pointermove', e => { if (e.buttons || e.pointerType === 'touch') aim(e.clientX); });
+document.addEventListener('keydown', e => {
+  if (!running) return;
+  if (e.key === 'ArrowLeft')  base.target = Math.max(base.r, base.target - 42);
+  if (e.key === 'ArrowRight') base.target = Math.min(W - base.r, base.target + 42);
+});
+
+/* ═══ 5. Цикл ═══ */
+function spawn(){
+  const bad = Math.random() < 0.27;
+  const pool = ITEMS.filter(i => i.good !== bad);
+  const it = pool[Math.floor(Math.random() * pool.length)];
+  const elapsed = ROUND - left;
+  drops.push({
+    id:it.id, good:it.good, r:it.r,
+    x: it.r + 6 + Math.random() * (W - it.r * 2 - 12),
+    y: -20,
+    vy: 145 + Math.random() * 60 + elapsed * 3.6,
+    spin: (Math.random() - .5) * 2
+  });
+}
+
+function loop(now){
+  if (!running) return;
+  const dt = Math.min(0.05, (now - lastFrame) / 1000);
+  lastFrame = now;
+
+  secAcc += dt;
+  if (secAcc >= 1){
+    secAcc -= 1; left--;
+    document.getElementById('clock').textContent = '0:' + String(Math.max(0, left)).padStart(2,'0');
+    if (left <= 0) return over();
+  }
+
+  spawnAcc += dt;
+  const gap = Math.max(0.30, 0.58 - (ROUND - left) * 0.010);
+  if (spawnAcc >= gap){ spawnAcc = 0; spawn(); }
+
+  base.x += (base.target - base.x) * Math.min(1, dt * 14);
+
+  for (let i = drops.length - 1; i >= 0; i--){
+    const d = drops[i];
+    d.y += d.vy * dt;
+    const dx = d.x - base.x, dy = d.y - (base.y - 10);
+    if (Math.abs(dx) < base.r * 0.86 && dy > -14 && dy < 22){
+      if (d.good){
+        score++;
+        if (topping.length < 14)
+          topping.push({ id:d.id, ox:(Math.random()-.5)*base.r*1.2, oy:(Math.random()-.5)*base.r*0.9 });
+      } else {
+        score = Math.max(0, score - 2);
+        flash = 0.32;
+        topping.splice(0, 1);
+      }
+      document.getElementById('score').textContent = score;
+      drops.splice(i, 1);
+      continue;
+    }
+    if (d.y > H + 40) drops.splice(i, 1);
+  }
+
+  draw();
+  requestAnimationFrame(loop);
+}
+
+function draw(){
+  ctx.clearRect(0, 0, W, H);
+
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#170E08');
+  g.addColorStop(1, '#42200E');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+  ctx.fillStyle = 'rgba(240,122,34,.16)';
+  ctx.beginPath(); ctx.ellipse(W/2, H + 26, W*0.72, 74, 0, 0, 7); ctx.fill();
+
+  drops.forEach(d => drawItem(ctx, d.id, d.x, d.y, d.r));
+
+  /* основа */
+  ctx.save();
+  ctx.translate(base.x, base.y);
+  ctx.fillStyle = '#C98C3E';
+  ctx.beginPath(); ctx.arc(0, 0, base.r, 0, 7); ctx.fill();
+  ctx.fillStyle = '#F3E3C6';
+  ctx.beginPath(); ctx.arc(0, 0, base.r - 7, 0, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(198,48,28,.22)';
+  ctx.beginPath(); ctx.arc(0, 0, base.r - 12, 0, 7); ctx.fill();
+  topping.forEach(t => drawItem(ctx, t.id, t.ox, t.oy, 9));
+  ctx.restore();
+
+  if (flash > 0){
+    ctx.fillStyle = `rgba(214,60,32,${flash})`;
+    ctx.fillRect(0, 0, W, H);
+    flash -= 0.02;
+  }
+}
+
+/* ═══ 6. Старт и финиш ═══ */
+function start(){
+  fit();
+  drops = []; topping = []; score = 0; left = ROUND;
+  spawnAcc = 0; secAcc = 0; flash = 0;
+  base.x = base.target = W / 2;
+  document.getElementById('score').textContent = '0';
+  document.getElementById('clock').textContent = '0:' + ROUND;
+  document.getElementById('curtain').classList.add('gone');
+  running = true;
+  lastFrame = performance.now();
+  requestAnimationFrame(loop);
+}
+
+function over(){
+  running = false;
+  document.getElementById('curtain').classList.remove('gone');
+
+  let pct, said;
+  if (score >= 26){ pct = 25; said = 'Так работают только на кухне.'; }
+  else if (score >= 18){ pct = 15; said = 'Уверенная рука, хороший темп.'; }
+  else if (score >= 10){ pct = 10; said = 'Для первого захода вполне.'; }
+  else { pct = 5; said = 'Начинка разлетелась, но скидка ваша.'; }
+
+  const pie = document.getElementById('pie');
+  const pc = pie.getContext('2d');
+  pc.setTransform(2, 0, 0, 2, 0, 0);
+  pc.clearRect(0, 0, 96, 96);
+  pc.fillStyle = '#C98C3E'; pc.beginPath(); pc.arc(48, 48, 44, 0, 7); pc.fill();
+  pc.fillStyle = '#F3E3C6'; pc.beginPath(); pc.arc(48, 48, 37, 0, 7); pc.fill();
+  pc.fillStyle = 'rgba(198,48,28,.24)'; pc.beginPath(); pc.arc(48, 48, 32, 0, 7); pc.fill();
+  (topping.length ? topping : [{id:'tomato',ox:0,oy:0}]).forEach(t =>
+    drawItem(pc, t.id, 48 + t.ox * 0.62, 48 + t.oy * 0.62, 9));
+
+  document.getElementById('done').textContent = 'Скидка ' + pct + '% на пиццу';
+  document.getElementById('line').textContent = said + ' Поймано продуктов: ' + score + '.';
+  document.getElementById('cd').textContent =
+    'PECH-' + pct + '-' + String(Math.floor(Math.random() * 9000) + 1000);
+  document.getElementById('shade').classList.add('on');
+  document.getElementById('retry').focus();
+}
+
+document.getElementById('play').addEventListener('click', start);
+document.getElementById('retry').addEventListener('click', () => {
+  document.getElementById('shade').classList.remove('on');
+  start();
+});
+document.getElementById('shade').addEventListener('click', () =>
+  document.getElementById('shade').classList.remove('on'));
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('shade').classList.remove('on');
+});
+window.addEventListener('resize', () => { fit(); if (!running) draw(); });
+
+fit();
+draw();
+</script>
+<script>
+/* Связка с Telegram: разворот на весь экран, свои цвета шапки
+   и системная кнопка «Назад» — возврат в меню бота.
+   Вне Telegram страница работает как обычная. */
+const tgApp = window.Telegram && window.Telegram.WebApp;
+if (tgApp){
+  tgApp.ready();
+  tgApp.expand();
+  try{
+    tgApp.setHeaderColor('#241811');
+    tgApp.setBackgroundColor('#EFE7DA');
+  }catch(e){}
+  try{
+    tgApp.BackButton.show();
+    tgApp.BackButton.onClick(() => { location.href = 'index.html'; });
+  }catch(e){}
+}
+</script>
+</body>
+</html>

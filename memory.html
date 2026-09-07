@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Стебель — найди пару</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Yeseva+One&display=swap" rel="stylesheet">
+<style>
+:root{
+  --violet-deep:#241A3D;
+  --violet:#3B2A5A;
+  --violet-soft:#5A4585;
+  --lilac:#E9E5F1;
+  --lilac-dim:#D6CFE6;
+  --paper:#FCFBFE;
+  --ink:#221B33;
+  --muted:#6B6182;
+  --leaf:#4E8C55;
+  --gold:#E8B23C;
+}
+
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+
+body{
+  margin:0;
+  background:var(--violet-deep);
+  font-family:'Onest',system-ui,-apple-system,'Segoe UI',sans-serif;
+  font-size:16px;line-height:1.5;color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  display:flex;justify-content:center;
+}
+
+.app{
+  width:100%;max-width:430px;min-height:100dvh;
+  background:var(--lilac);position:relative;overflow:hidden;
+}
+
+/* ─────────── шапка ─────────── */
+.topbar{
+  background:var(--violet);
+  padding:15px 20px;
+  display:flex;align-items:center;gap:11px;
+}
+.mark{width:30px;height:30px;flex:none;}
+.shopname{
+  font-family:'Yeseva One',serif;
+  font-size:20px;color:var(--paper);letter-spacing:.01em;
+}
+.shopmeta{margin-left:auto;font-size:12.5px;color:#B8AAD6;}
+
+/* ─────────── игровая зона ─────────── */
+.play{
+  background:var(--violet);
+  padding:4px 20px 28px;
+  border-radius:0 0 30px 30px;
+  text-align:center;
+}
+.play-title{
+  font-family:'Yeseva One',serif;
+  font-size:27px;line-height:1.15;color:var(--paper);
+  margin:6px 0 6px;
+}
+.play-sub{
+  margin:0 auto 20px;max-width:28ch;
+  font-size:14px;color:#B8AAD6;
+}
+
+.hud{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:8px;margin-bottom:18px;
+}
+.hud div{
+  background:rgba(255,255,255,.07);
+  border-radius:14px;padding:9px 6px;
+}
+.hud .k{display:block;font-size:11.5px;color:#A99BC9;margin-bottom:2px;}
+.hud .v{
+  display:block;font-family:'Yeseva One',serif;font-size:19px;
+  color:var(--paper);font-variant-numeric:tabular-nums;
+}
+
+.board{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:9px;max-width:330px;margin:0 auto 20px;
+}
+
+.card{
+  position:relative;aspect-ratio:1;
+  border:0;padding:0;background:none;cursor:pointer;
+  perspective:700px;
+  border-radius:15px;
+}
+.card:focus-visible{outline:3px solid var(--gold);outline-offset:3px;}
+.card:disabled{cursor:default;}
+
+.flipper{
+  position:absolute;inset:0;
+  transition:transform .45s cubic-bezier(.3,.8,.4,1);
+  transform-style:preserve-3d;
+}
+.card.open .flipper{transform:rotateY(180deg);}
+
+.side{
+  position:absolute;inset:0;
+  border-radius:15px;
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+.back{
+  background:linear-gradient(150deg,#4B3775 0%,#33245200 100%),var(--violet-soft);
+  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14);
+}
+.front{
+  background:var(--paper);
+  transform:rotateY(180deg);
+  box-shadow:inset 0 0 0 1.5px var(--lilac-dim);
+}
+.card.done .front{
+  background:#EFF7EF;
+  box-shadow:inset 0 0 0 2px var(--leaf);
+}
+.card.done{opacity:.72;}
+.side svg{width:74%;height:74%;}
+
+.again{
+  border:0;background:rgba(255,255,255,.1);color:var(--paper);
+  font-family:'Onest',sans-serif;font-weight:500;font-size:14px;
+  border-radius:13px;padding:11px 20px;cursor:pointer;
+}
+.again:focus-visible{outline:3px solid var(--gold);outline-offset:2px;}
+
+/* ─────────── секции ─────────── */
+.block{padding:26px 20px 0;}
+.block h3{font-family:'Yeseva One',serif;font-size:20px;margin:0 0 4px;}
+.block .sub{margin:0 0 16px;font-size:13.5px;color:var(--muted);}
+
+.tiers{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;}
+.tiers li{
+  display:flex;align-items:center;gap:13px;
+  background:var(--paper);border-radius:16px;padding:13px 15px;
+}
+.tiers .pct{
+  font-family:'Yeseva One',serif;font-size:21px;color:var(--violet);
+  min-width:52px;
+}
+.tiers .cond{font-size:14.5px;font-weight:500;}
+.tiers .note{display:block;font-size:12.5px;color:var(--muted);font-weight:400;}
+
+.steps{list-style:none;counter-reset:s;margin:0;padding:0;display:flex;flex-direction:column;gap:13px;}
+.steps li{counter-increment:s;display:grid;grid-template-columns:30px 1fr;gap:13px;align-items:start;}
+.steps li::before{
+  content:counter(s);
+  width:30px;height:30px;border-radius:50%;
+  background:var(--violet);color:var(--paper);
+  font-family:'Yeseva One',serif;font-size:14px;
+  display:flex;align-items:center;justify-content:center;
+}
+.steps strong{display:block;font-size:14.5px;font-weight:600;}
+.steps span{font-size:13.5px;color:var(--muted);}
+
+.smallprint{margin:24px 20px 0;padding:15px 17px;background:var(--lilac-dim);border-radius:16px;}
+.smallprint p{margin:0;font-size:12.5px;line-height:1.55;color:var(--muted);}
+
+.bottom{
+  margin-top:24px;padding:20px 20px calc(26px + env(safe-area-inset-bottom));
+  background:var(--violet);color:#B8AAD6;
+  border-radius:30px 30px 0 0;font-size:12.5px;text-align:center;
+}
+.bottom strong{
+  display:block;color:var(--paper);
+  font-family:'Yeseva One',serif;font-size:16px;margin-bottom:4px;
+}
+
+/* ─────────── шторка результата ─────────── */
+.veil{
+  position:fixed;inset:0;background:rgba(20,13,36,.76);
+  backdrop-filter:blur(4px);
+  opacity:0;pointer-events:none;transition:opacity .26s ease;z-index:20;
+}
+.veil.on{opacity:1;pointer-events:auto;}
+.panel{
+  position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:430px;
+  background:var(--paper);border-radius:28px 28px 0 0;
+  padding:26px 24px calc(24px + env(safe-area-inset-bottom));
+  transform:translateY(102%);
+  transition:transform .36s cubic-bezier(.2,.9,.3,1);
+  z-index:21;text-align:center;
+}
+.veil.on + .panel{transform:translateY(0);}
+.panel .bloom{width:78px;height:78px;margin:0 auto 12px;}
+.panel h2{font-family:'Yeseva One',serif;font-size:27px;line-height:1.15;margin:0 0 6px;}
+.panel .said{margin:0 0 16px;font-size:14.5px;color:var(--muted);}
+.ticket{
+  border:2px dashed var(--lilac-dim);border-radius:16px;
+  padding:14px;margin-bottom:16px;background:#FAF8FE;
+}
+.ticket .num{
+  display:block;font-family:'Yeseva One',serif;font-size:23px;letter-spacing:.06em;
+}
+.ticket .till{display:block;font-size:12.5px;color:var(--muted);margin-top:3px;}
+.ok{
+  width:100%;border:0;border-radius:16px;padding:15px;
+  background:var(--violet);color:var(--paper);
+  font-family:'Onest',sans-serif;font-weight:600;font-size:16px;cursor:pointer;
+}
+.ok:focus-visible{outline:3px solid var(--gold);outline-offset:2px;}
+
+@media (prefers-reduced-motion:reduce){
+  .flipper{transition-duration:.01ms;}
+  .panel,.veil{transition-duration:.01ms;}
+}
+
+/* прокрутка живёт внутри приложения, а не в документе:
+   так свайп вниз не закрывает окно просмотрщика */
+html,body{height:100dvh;overflow:hidden;overscroll-behavior:none;}
+.app{
+  height:100dvh;min-height:0;
+  overflow-y:auto;overflow-x:hidden;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="topbar">
+    <svg class="mark" viewBox="0 0 30 30" aria-hidden="true">
+      <circle cx="15" cy="15" r="15" fill="#E8B23C"/>
+      <path d="M15 24 V13" stroke="#3B2A5A" stroke-width="2" stroke-linecap="round"/>
+      <path d="M15 17 C10 17 8.5 14 8.5 12 C12 12 15 14 15 17 Z" fill="#4E8C55"/>
+      <circle cx="15" cy="10" r="4.6" fill="#E4557A"/>
+      <circle cx="15" cy="10" r="1.7" fill="#FCFBFE"/>
+    </svg>
+    <span class="shopname">Стебель</span>
+    <span class="shopmeta">Цветы и букеты</span>
+  </header>
+
+  <section class="play">
+    <h1 class="play-title">Найди пару</h1>
+    <p class="play-sub">Соберите восемь пар цветов. Чем меньше ходов — тем больше скидка на букет.</p>
+
+    <div class="hud">
+      <div><span class="k">Ходы</span><span class="v" id="moves">0</span></div>
+      <div><span class="k">Время</span><span class="v" id="clock">0:00</span></div>
+      <div><span class="k">Найдено</span><span class="v" id="found">0 / 8</span></div>
+    </div>
+
+    <div class="board" id="board"></div>
+    <button class="again" id="again">Начать заново</button>
+  </section>
+
+  <section class="block">
+    <h3>Награда за игру</h3>
+    <p class="sub">Минимально возможный результат — восемь ходов. Скидка считается по итогу партии.</p>
+    <ul class="tiers">
+      <li><span class="pct">15%</span><span class="cond">До 12 ходов<span class="note">Почти идеальная память</span></span></li>
+      <li><span class="pct">10%</span><span class="cond">13–18 ходов<span class="note">Хороший результат</span></span></li>
+      <li><span class="pct">5%</span><span class="cond">19 ходов и больше<span class="note">Скидка всё равно ваша</span></span></li>
+    </ul>
+  </section>
+
+  <section class="block">
+    <h3>Как забрать</h3>
+    <p class="sub">Одна партия со скидкой в день на гостя.</p>
+    <ol class="steps">
+      <li><div><strong>Собираете все пары</strong><span>Открывайте по две карточки, одинаковые остаются на столе.</span></div></li>
+      <li><div><strong>Получаете код</strong><span>Он появится сразу после последней найденной пары.</span></div></li>
+      <li><div><strong>Называете код флористу</strong><span>В лавке на Садовой или при заказе по телефону.</span></div></li>
+    </ol>
+  </section>
+
+  <div class="smallprint">
+    <p>Скидка действует на готовые и авторские букеты, не распространяется на горшечные растения и доставку. Один код — одна покупка. Не суммируется с другими акциями.</p>
+  </div>
+
+  <footer class="bottom">
+    <strong>Лавка Стебель</strong>
+    Садовая, 7 — ежедневно с 9:00 до 20:00
+  </footer>
+
+</div>
+
+<div class="veil" id="veil"></div>
+<section class="panel" id="panel" role="dialog" aria-modal="true" aria-labelledby="win">
+  <div class="bloom" id="bloom"></div>
+  <h2 id="win">—</h2>
+  <p class="said" id="said">—</p>
+  <div class="ticket">
+    <span class="num" id="num">—</span>
+    <span class="till">Действует 7 дней с сегодняшнего дня</span>
+  </div>
+  <button class="ok" id="ok">Забрать скидку</button>
+</section>
+
+<script>
+/* ═══ 1. Цветы. Восемь видов — восемь пар ═══ */
+const FLOWERS = [
+  { name:'Пион',     petals:12, petal:'#E4557A', heart:'#F5C6D4', long:false },
+  { name:'Ромашка',  petals:10, petal:'#FCFBFE', heart:'#E8B23C', long:true  },
+  { name:'Василёк',  petals:6,  petal:'#5A79D6', heart:'#2E3F7A', long:true  },
+  { name:'Тюльпан',  petals:5,  petal:'#E0655E', heart:'#F0A79C', long:false },
+  { name:'Астра',    petals:14, petal:'#B57FD0', heart:'#F2E27A', long:true  },
+  { name:'Мак',      petals:4,  petal:'#D4342C', heart:'#2B2118', long:false },
+  { name:'Лаванда',  petals:8,  petal:'#8B7BD8', heart:'#EDE7FA', long:true  },
+  { name:'Ноготки',  petals:16, petal:'#F0951F', heart:'#C4620E', long:false }
+];
+
+/* Рисуем цветок: лепестки по кругу плюс сердцевина */
+function bloomSVG(f, size){
+  const rx = f.long ? 5.5 : 8.5;
+  const ry = f.long ? 17  : 13;
+  const cy = 50 - (f.long ? 19 : 15);
+  let petals = '';
+  for (let i = 0; i < f.petals; i++){
+    const a = i * 360 / f.petals;
+    petals += `<ellipse cx="50" cy="${cy}" rx="${rx}" ry="${ry}" fill="${f.petal}" `
+            + `stroke="rgba(34,27,51,.16)" stroke-width="1" transform="rotate(${a} 50 50)"/>`;
+  }
+  return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" role="img" aria-label="${f.name}">`
+       + petals
+       + `<circle cx="50" cy="50" r="${f.long ? 11 : 13}" fill="${f.heart}" stroke="rgba(34,27,51,.16)" stroke-width="1"/>`
+       + `</svg>`;
+}
+
+/* ═══ 2. Раздача ═══ */
+const board  = document.getElementById('board');
+const movesEl= document.getElementById('moves');
+const clockEl= document.getElementById('clock');
+const foundEl= document.getElementById('found');
+const veil   = document.getElementById('veil');
+const okBtn  = document.getElementById('ok');
+
+let deck = [], first = null, second = null, locked = false;
+let moves = 0, pairs = 0, started = false, timer = null, seconds = 0;
+
+const shuffle = arr => {
+  for (let i = arr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+};
+
+function deal(){
+  clearInterval(timer);
+  board.innerHTML = '';
+  deck = shuffle([...FLOWERS.keys(), ...FLOWERS.keys()]);
+  first = second = null;
+  locked = false;
+  moves = pairs = seconds = 0;
+  started = false;
+  movesEl.textContent = '0';
+  clockEl.textContent = '0:00';
+  foundEl.textContent = '0 / 8';
+
+  deck.forEach((flowerId, pos) => {
+    const f = FLOWERS[flowerId];
+    const card = document.createElement('button');
+    card.className = 'card';
+    card.dataset.flower = flowerId;
+    card.setAttribute('aria-label', `Карточка ${pos + 1}, закрыта`);
+    card.innerHTML =
+      '<span class="flipper">' +
+        '<span class="side back">' +
+          '<svg viewBox="0 0 40 40" aria-hidden="true">' +
+            '<path d="M20 32 V17" stroke="rgba(255,255,255,.5)" stroke-width="2" stroke-linecap="round"/>' +
+            '<path d="M20 23 C13 23 11 19 11 16 C16 16 20 19 20 23 Z" fill="rgba(255,255,255,.32)"/>' +
+            '<circle cx="20" cy="12" r="5" fill="rgba(255,255,255,.45)"/>' +
+          '</svg>' +
+        '</span>' +
+        '<span class="side front">' + bloomSVG(f, 56) + '</span>' +
+      '</span>';
+    card.addEventListener('click', () => flip(card));
+    board.appendChild(card);
+  });
+}
+
+/* ═══ 3. Ход ═══ */
+function flip(card){
+  if (locked || card.classList.contains('open')) return;
+
+  if (!started){
+    started = true;
+    timer = setInterval(() => {
+      seconds++;
+      clockEl.textContent = Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
+    }, 1000);
+  }
+
+  card.classList.add('open');
+  card.setAttribute('aria-label', FLOWERS[card.dataset.flower].name);
+
+  if (!first){ first = card; return; }
+
+  second = card;
+  moves++;
+  movesEl.textContent = moves;
+  locked = true;
+
+  const same = first.dataset.flower === second.dataset.flower;
+
+  setTimeout(() => {
+    if (same){
+      first.classList.add('done');
+      second.classList.add('done');
+      first.disabled = second.disabled = true;
+      pairs++;
+      foundEl.textContent = pairs + ' / 8';
+      if (pairs === FLOWERS.length) win();
+    } else {
+      first.classList.remove('open');
+      second.classList.remove('open');
+      first.setAttribute('aria-label', 'Карточка закрыта');
+      second.setAttribute('aria-label', 'Карточка закрыта');
+    }
+    first = second = null;
+    locked = false;
+  }, same ? 420 : 780);
+}
+
+/* ═══ 4. Финал ═══ */
+function win(){
+  clearInterval(timer);
+
+  let pct, said;
+  if (moves <= 12){
+    pct = 15; said = 'Отличная память. Максимальная скидка ваша.';
+  } else if (moves <= 18){
+    pct = 10; said = 'Крепкий результат — скидка десять процентов.';
+  } else {
+    pct = 5;  said = 'Пары собраны, скидка ваша. В следующий раз выйдет быстрее.';
+  }
+
+  const time = Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
+  document.getElementById('bloom').innerHTML =
+    bloomSVG(FLOWERS[Math.floor(Math.random() * FLOWERS.length)], 78);
+  document.getElementById('win').textContent = 'Скидка ' + pct + '% на букет';
+  document.getElementById('said').textContent =
+    said + ' Ходов: ' + moves + ', время: ' + time + '.';
+  document.getElementById('num').textContent =
+    'STEBEL-' + pct + '-' + String(Math.floor(Math.random() * 9000) + 1000);
+
+  veil.classList.add('on');
+  okBtn.focus();
+}
+
+okBtn.addEventListener('click', () => veil.classList.remove('on'));
+veil.addEventListener('click', () => veil.classList.remove('on'));
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') veil.classList.remove('on');
+});
+document.getElementById('again').addEventListener('click', deal);
+
+deal();
+</script>
+<script>
+/* Связка с Telegram: разворот на весь экран, свои цвета шапки
+   и системная кнопка «Назад» — возврат в меню бота.
+   Вне Telegram страница работает как обычная. */
+const tgApp = window.Telegram && window.Telegram.WebApp;
+if (tgApp){
+  tgApp.ready();
+  tgApp.expand();
+  try{
+    tgApp.setHeaderColor('#3B2A5A');
+    tgApp.setBackgroundColor('#E9E5F1');
+  }catch(e){}
+  try{
+    tgApp.BackButton.show();
+    tgApp.BackButton.onClick(() => { location.href = 'index.html'; });
+  }catch(e){}
+}
+</script>
+</body>
+</html>

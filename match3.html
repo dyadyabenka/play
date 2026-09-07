@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Форзац — три в ряд</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Literata:opsz,wght@7..72,500;7..72,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1B2233;
+  --ink-deep:#121724;
+  --paper:#E9E9E4;
+  --card:#FAFAF7;
+  --hair:#D5D5CC;
+  --muted:#6A6E78;
+  --ochre:#D9A227;
+  --oxblood:#A63A46;
+}
+
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+
+body{
+  margin:0;background:var(--ink-deep);
+  font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
+  font-size:16px;line-height:1.5;color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  display:flex;justify-content:center;
+}
+.app{width:100%;max-width:430px;min-height:100dvh;background:var(--paper);overflow:hidden;}
+
+/* ─────────── шапка ─────────── */
+.top{background:var(--ink);padding:14px 20px;display:flex;align-items:center;gap:11px;}
+.emblem{width:30px;height:30px;flex:none;}
+.shop{font-family:'Literata',serif;font-weight:700;font-size:19px;color:var(--paper);}
+.tag{margin-left:auto;font-size:12.5px;color:#98A0B4;}
+
+/* ─────────── игра ─────────── */
+.zone{background:var(--ink);padding:4px 18px 26px;border-radius:0 0 28px 28px;text-align:center;}
+.head{font-family:'Literata',serif;font-weight:700;font-size:27px;line-height:1.12;color:var(--paper);margin:10px 0 6px;}
+.note{margin:0 auto 18px;max-width:29ch;font-size:13.5px;color:#98A0B4;}
+
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px;}
+.stats div{background:rgba(255,255,255,.07);border-radius:13px;padding:9px 6px;}
+.stats .cap{display:block;font-size:11.5px;color:#98A0B4;margin-bottom:1px;}
+.stats .fig{
+  display:block;font-family:'Literata',serif;font-weight:700;font-size:21px;
+  color:var(--paper);font-variant-numeric:tabular-nums;
+}
+
+.shelf{
+  position:relative;width:100%;max-width:340px;aspect-ratio:1;
+  margin:0 auto 16px;
+  background:#0E1320;border-radius:18px;
+  box-shadow:inset 0 0 0 2px #2B3348;
+  overflow:hidden;touch-action:none;
+}
+
+.book{
+  position:absolute;
+  transition:left .26s ease, top .26s cubic-bezier(.4,.05,.5,1), transform .18s ease, opacity .18s ease;
+  padding:3px;cursor:pointer;
+}
+.book svg{width:100%;height:100%;display:block;}
+.book.picked{transform:scale(.88);z-index:5;}
+.book.picked svg{filter:drop-shadow(0 0 0 2px var(--ochre));}
+.book.gone{transform:scale(.3);opacity:0;}
+
+.ring{
+  position:absolute;border:2.5px solid var(--ochre);border-radius:11px;
+  pointer-events:none;opacity:0;transition:all .16s ease;z-index:6;
+}
+.ring.on{opacity:1;}
+
+.burst{
+  position:absolute;z-index:9;pointer-events:none;
+  transform:translate(-50%,-50%);
+  font-family:'Literata',serif;font-weight:700;font-size:13px;
+  color:#F7F4EC;background:rgba(20,26,40,.92);
+  border:1.5px solid var(--ochre);border-radius:10px;
+  padding:4px 9px;white-space:nowrap;
+  animation:rise .85s ease forwards;
+}
+@keyframes rise{
+  0%{opacity:0;transform:translate(-50%,-25%) scale(.82);}
+  18%{opacity:1;transform:translate(-50%,-50%) scale(1);}
+  100%{opacity:0;transform:translate(-50%,-125%) scale(1);}
+}
+
+.veil{
+  position:absolute;inset:0;z-index:12;background:rgba(11,15,26,.92);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:22px;
+}
+.veil.off{display:none;}
+.veil p{margin:0;max-width:24ch;font-size:13.5px;color:#A9B0C2;}
+.go{
+  border:0;border-radius:15px;padding:14px 32px;
+  background:var(--ochre);color:#2A2005;
+  font-family:'Literata',serif;font-weight:700;font-size:18px;cursor:pointer;
+}
+.go:focus-visible{outline:3px solid var(--paper);outline-offset:3px;}
+
+.restart{
+  border:0;background:rgba(255,255,255,.1);color:var(--paper);
+  font-family:'IBM Plex Sans',sans-serif;font-weight:500;font-size:14px;
+  border-radius:12px;padding:10px 20px;cursor:pointer;
+}
+.restart:focus-visible{outline:3px solid var(--ochre);outline-offset:2px;}
+
+/* ─────────── секции ─────────── */
+.sec{padding:26px 20px 0;}
+.sec h3{font-family:'Literata',serif;font-weight:700;font-size:19px;margin:0 0 4px;}
+.sec .sub{margin:0 0 15px;font-size:13.5px;color:var(--muted);}
+
+.levels{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;}
+.levels li{display:flex;align-items:center;gap:13px;background:var(--card);border-radius:14px;padding:12px 15px;}
+.levels .pc{font-family:'Literata',serif;font-weight:700;font-size:20px;color:var(--oxblood);min-width:52px;}
+.levels .cn{font-size:14.5px;font-weight:500;}
+.levels .ex{display:block;font-size:12.5px;color:var(--muted);font-weight:400;}
+
+.how{list-style:none;counter-reset:h;margin:0;padding:0;display:flex;flex-direction:column;gap:13px;}
+.how li{counter-increment:h;display:grid;grid-template-columns:30px 1fr;gap:13px;align-items:start;}
+.how li::before{
+  content:counter(h);width:30px;height:30px;border-radius:9px;
+  background:var(--ink);color:var(--paper);
+  font-family:'Literata',serif;font-weight:700;font-size:14px;
+  display:flex;align-items:center;justify-content:center;
+}
+.how strong{display:block;font-size:14.5px;font-weight:600;}
+.how span{font-size:13.5px;color:var(--muted);}
+
+.small{margin:24px 20px 0;padding:15px 17px;background:var(--hair);border-radius:15px;}
+.small p{margin:0;font-size:12.5px;line-height:1.55;color:#5E6270;}
+
+.bot{
+  margin-top:24px;padding:20px 20px calc(26px + env(safe-area-inset-bottom));
+  background:var(--ink);color:#98A0B4;border-radius:28px 28px 0 0;
+  font-size:12.5px;text-align:center;
+}
+.bot strong{display:block;color:var(--paper);font-family:'Literata',serif;font-weight:700;font-size:16px;margin-bottom:4px;}
+
+/* ─────────── итог ─────────── */
+.dim{
+  position:fixed;inset:0;background:rgba(10,14,22,.8);backdrop-filter:blur(4px);
+  opacity:0;pointer-events:none;transition:opacity .26s ease;z-index:20;
+}
+.dim.on{opacity:1;pointer-events:auto;}
+.final{
+  position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:430px;
+  background:var(--card);border-radius:26px 26px 0 0;
+  padding:26px 24px calc(24px + env(safe-area-inset-bottom));
+  transform:translateY(102%);transition:transform .36s cubic-bezier(.2,.9,.3,1);
+  z-index:21;text-align:center;
+}
+.dim.on + .final{transform:translateY(0);}
+.final .pile{width:92px;height:92px;margin:0 auto 10px;}
+.final h2{font-family:'Literata',serif;font-weight:700;font-size:25px;line-height:1.15;margin:0 0 6px;}
+.final .say{margin:0 0 16px;font-size:14.5px;color:var(--muted);}
+.slip{border:2px dashed var(--hair);border-radius:15px;padding:14px;margin-bottom:15px;background:#FFFEFA;}
+.slip .code{display:block;font-family:'Literata',serif;font-weight:700;font-size:22px;letter-spacing:.05em;}
+.slip .valid{display:block;font-size:12.5px;color:var(--muted);margin-top:3px;}
+.close{
+  width:100%;border:0;border-radius:15px;padding:15px;
+  background:var(--ink);color:var(--paper);
+  font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:16px;cursor:pointer;
+}
+.close:focus-visible{outline:3px solid var(--ochre);outline-offset:2px;}
+
+@media (prefers-reduced-motion:reduce){
+  .book{transition-duration:.01ms;}
+  .final,.dim{transition-duration:.01ms;}
+}
+
+/* прокрутка живёт внутри приложения, а не в документе:
+   так свайп вниз не закрывает окно просмотрщика */
+html,body{height:100dvh;overflow:hidden;overscroll-behavior:none;}
+.app{
+  height:100dvh;min-height:0;
+  overflow-y:auto;overflow-x:hidden;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="top">
+    <svg class="emblem" viewBox="0 0 30 30" aria-hidden="true">
+      <circle cx="15" cy="15" r="15" fill="#D9A227"/>
+      <rect x="7" y="8" width="6" height="14" rx="1.4" fill="#A63A46"/>
+      <rect x="14" y="6" width="6" height="16" rx="1.4" fill="#1B2233"/>
+      <rect x="20" y="10" width="4.5" height="12" rx="1.2" fill="#2E7D80"/>
+    </svg>
+    <span class="shop">Форзац</span>
+    <span class="tag">Книжный магазин</span>
+  </header>
+
+  <section class="zone">
+    <h1 class="head">Три в ряд</h1>
+    <p class="note">Двадцать ходов. Меняйте местами соседние корешки и собирайте по три одинаковых.</p>
+
+    <div class="stats">
+      <div><span class="cap">Ходы</span><span class="fig" id="moves">20</span></div>
+      <div><span class="cap">Очки</span><span class="fig" id="score">0</span></div>
+    </div>
+
+    <div class="shelf" id="shelf">
+      <div class="ring" id="ring"></div>
+      <div class="veil" id="veil">
+        <p id="veiltext">Проведите пальцем от корешка к соседнему. Можно и просто нажать на два по очереди.</p>
+        <button class="go" id="go">Начать</button>
+        <button class="restart" id="resume" hidden>Продолжить прошлую партию</button>
+      </div>
+    </div>
+
+    <button class="restart" id="restart">Начать заново</button>
+  </section>
+
+  <section class="sec">
+    <h3>Что даёт результат</h3>
+    <p class="sub">Скидка на любую книгу, кроме учебников и уценённых изданий.</p>
+    <ul class="levels">
+      <li><span class="pc">20%</span><span class="cn">От 165 очков<span class="ex">Заведующий отделом</span></span></li>
+      <li><span class="pc">15%</span><span class="cn">120–164 очка<span class="ex">Опытный читатель</span></span></li>
+      <li><span class="pc">10%</span><span class="cn">75–119 очков<span class="ex">Уверенное начало</span></span></li>
+      <li><span class="pc">5%</span><span class="cn">Меньше 75<span class="ex">Скидка всё равно ваша</span></span></li>
+    </ul>
+  </section>
+
+  <section class="sec">
+    <h3>Комбинации</h3>
+    <p class="sub">Чем длиннее ряд, тем больше очков за книгу. Тройка стоит три очка, пятёрка — двенадцать.</p>
+    <ul class="levels">
+      <li><span class="pc">3</span><span class="cn">Три подряд<span class="ex">Базовый ряд</span></span></li>
+      <li><span class="pc">7</span><span class="cn">Четвёрка<span class="ex">Вдвое выгоднее тройки</span></span></li>
+      <li><span class="pc">12</span><span class="cn">Пятёрка<span class="ex">Вчетверо выгоднее тройки</span></span></li>
+      <li><span class="pc">18</span><span class="cn">Угол или россыпь<span class="ex">Горизонтальный и вертикальный ряд пересеклись</span></span></li>
+    </ul>
+  </section>
+
+  <section class="sec">
+    <h3>Как играть</h3>
+    <p class="sub">Ход тратится только тогда, когда обмен что-то собрал.</p>
+    <ol class="how">
+      <li><div><strong>Двигаете корешок к соседнему</strong><span>Свайп в любую из четырёх сторон или два нажатия подряд. Если ряд не собрался, корешки вернутся и ход не потратится.</span></div></li>
+      <li><div><strong>Три одинаковых уходят с полки</strong><span>Верхние книги сползают вниз, сверху досыпаются новые.</span></div></li>
+      <li><div><strong>Ловите цепочки</strong><span>Если после падения снова собрался ряд, очки за него удваиваются. Третий ряд подряд — утраиваются. Цепочка из длинных рядов и приносит основной счёт.</span></div></li>
+    </ol>
+  </section>
+
+  <div class="small">
+    <p>Одна игра со скидкой в день на посетителя. Код действует 14 дней, на одну книгу, при покупке в магазине. Не суммируется с картой читателя и распродажей.</p>
+  </div>
+
+  <footer class="bot">
+    <strong>Книжный Форзац</strong>
+    Пушкинская, 21 — ежедневно с 10:00 до 21:00
+  </footer>
+
+</div>
+
+<div class="dim" id="dim"></div>
+<section class="final" id="final" role="dialog" aria-modal="true" aria-labelledby="fin">
+  <svg class="pile" viewBox="0 0 100 100" aria-hidden="true">
+    <rect x="18" y="62" width="64" height="15" rx="3" fill="#A63A46"/>
+    <rect x="24" y="46" width="54" height="15" rx="3" fill="#2E7D80"/>
+    <rect x="20" y="30" width="58" height="15" rx="3" fill="#D9A227"/>
+    <rect x="30" y="14" width="42" height="15" rx="3" fill="#3D4E9E"/>
+  </svg>
+  <h2 id="fin">—</h2>
+  <p class="say" id="say">—</p>
+  <div class="slip">
+    <span class="code" id="code">—</span>
+    <span class="valid">Действует 14 дней с сегодняшнего дня</span>
+  </div>
+  <button class="close" id="close">Забрать скидку</button>
+</section>
+
+<script>
+/* ═══ 1. Виды корешков ═══
+   Цвет плюс знак: по одному цвету различать трудно тем,
+   кто плохо видит оттенки, поэтому у каждого вида свой значок. */
+const KINDS = [
+  { spine:'#A63A46', band:'#7E2A33', sign:'circle' },
+  { spine:'#D9A227', band:'#A87A15', sign:'diamond' },
+  { spine:'#2E7D80', band:'#215D5F', sign:'triangle' },
+  { spine:'#3D4E9E', band:'#2C3A78', sign:'ring' },
+  { spine:'#5C8A3E', band:'#43672C', sign:'bar' },
+  { spine:'#7A4A86', band:'#5A3563', sign:'cross' }
+];
+
+const COLS = 7, ROWS = 7, START_MOVES = 20;
+
+function spineSVG(k){
+  const f = KINDS[k];
+  let sign = '';
+  switch(f.sign){
+    case 'circle':   sign = '<circle cx="20" cy="20" r="6.4" fill="#F7F4EC"/>'; break;
+    case 'diamond':  sign = '<rect x="14.5" y="14.5" width="11" height="11" rx="1.6" fill="#F7F4EC" transform="rotate(45 20 20)"/>'; break;
+    case 'triangle': sign = '<path d="M20 13.4 L26.4 25.4 H13.6 Z" fill="#F7F4EC"/>'; break;
+    case 'ring':     sign = '<circle cx="20" cy="20" r="6" fill="none" stroke="#F7F4EC" stroke-width="3"/>'; break;
+    case 'bar':      sign = '<rect x="12.6" y="17.2" width="14.8" height="5.6" rx="2.4" fill="#F7F4EC"/>'; break;
+    case 'cross':    sign = '<path d="M17.2 13 h5.6 v4.2 H27 v5.6 h-4.2 V27 h-5.6 v-4.2 H13 v-5.6 h4.2 Z" fill="#F7F4EC"/>'; break;
+  }
+  return '<svg viewBox="0 0 40 40" aria-hidden="true">'
+       + `<rect x="1.5" y="1.5" width="37" height="37" rx="7" fill="${f.spine}"/>`
+       + `<rect x="1.5" y="6.5" width="37" height="3.4" fill="${f.band}"/>`
+       + `<rect x="1.5" y="30.1" width="37" height="3.4" fill="${f.band}"/>`
+       + sign
+       + `<rect x="1.5" y="1.5" width="37" height="37" rx="7" fill="none" stroke="rgba(0,0,0,.22)" stroke-width="1.5"/>`
+       + '</svg>';
+}
+
+/* ═══ 2. Поле ═══ */
+const shelf   = document.getElementById('shelf');
+const ring    = document.getElementById('ring');
+const movesEl = document.getElementById('moves');
+const scoreEl = document.getElementById('score');
+const veil    = document.getElementById('veil');
+
+let grid = [], picked = null, locked = true;
+let moves = START_MOVES, score = 0;
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const rnd   = () => Math.floor(Math.random() * KINDS.length);
+
+function place(tile, r, c){
+  tile.el.style.left   = (c * 100 / COLS) + '%';
+  tile.el.style.top    = (r * 100 / ROWS) + '%';
+  tile.el.style.width  = (100 / COLS) + '%';
+  tile.el.style.height = (100 / ROWS) + '%';
+}
+
+function newTile(kind, r, c){
+  const el = document.createElement('div');
+  el.className = 'book';
+  el.innerHTML = spineSVG(kind);
+  el.addEventListener('click', () => tap(el));
+  shelf.appendChild(el);
+  const tile = { kind, el };
+  place(tile, r, c);
+  return tile;
+}
+
+function render(){
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (grid[r][c]) place(grid[r][c], r, c);
+}
+
+function findAt(el){
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (grid[r][c] && grid[r][c].el === el) return { r, c };
+  return null;
+}
+
+/* ═══ 3. Поиск рядов и фигур ═══
+   runs()     — все непрерывные ряды от трёх подряд
+   clusters() — ряды, пересекающиеся хотя бы одной книгой,
+                считаются одной фигурой: так Г и Т дают больше очков */
+function runs(){
+  const out = [];
+  for (let r = 0; r < ROWS; r++){
+    let run = 1;
+    for (let c = 1; c <= COLS; c++){
+      const same = c < COLS && grid[r][c] && grid[r][c-1] && grid[r][c].kind === grid[r][c-1].kind;
+      if (same) run++;
+      else {
+        if (run >= 3){
+          const cells = [];
+          for (let k = c - run; k < c; k++) cells.push({ r, c:k });
+          cells.dir = 'h';
+          out.push(cells);
+        }
+        run = 1;
+      }
+    }
+  }
+  for (let c = 0; c < COLS; c++){
+    let run = 1;
+    for (let r = 1; r <= ROWS; r++){
+      const same = r < ROWS && grid[r][c] && grid[r-1][c] && grid[r][c].kind === grid[r-1][c].kind;
+      if (same) run++;
+      else {
+        if (run >= 3){
+          const cells = [];
+          for (let k = r - run; k < r; k++) cells.push({ r:k, c });
+          cells.dir = 'v';
+          out.push(cells);
+        }
+        run = 1;
+      }
+    }
+  }
+  return out;
+}
+
+const anyMatch = () => runs().length > 0;
+
+function clusters(){
+  const groups = [];
+  runs().forEach(run => {
+    const touching = groups.filter(g => run.some(p => g.keys.has(p.r + ',' + p.c)));
+    if (!touching.length){
+      groups.push({ keys:new Set(run.map(p => p.r + ',' + p.c)), cells:[...run], dirs:new Set([run.dir]) });
+      return;
+    }
+    const host = touching[0];
+    host.dirs.add(run.dir);
+    const absorb = list => list.forEach(p => {
+      const key = p.r + ',' + p.c;
+      if (!host.keys.has(key)){ host.keys.add(key); host.cells.push(p); }
+    });
+    absorb(run);
+    touching.slice(1).forEach(g => {
+      absorb(g.cells);
+      g.dirs.forEach(d => host.dirs.add(d));
+      groups.splice(groups.indexOf(g), 1);
+    });
+  });
+  return groups;
+}
+
+/* Очки за фигуру. Растут быстрее размера — в этом весь смысл комбинаций */
+const TABLE = { 3:3, 4:7, 5:12, 6:18 };
+const worth = n => TABLE[n] || 25 + (n - 7) * 6;
+
+function nameOf(g){
+  if (g.dirs.size > 1) return 'Угол';
+  const n = g.cells.length;
+  if (n >= 6) return 'Россыпь';
+  if (n === 5) return 'Пятёрка';
+  if (n === 4) return 'Четвёрка';
+  return null;
+}
+
+/* всплывающая подпись над фигурой */
+function burst(cells, text){
+  const mr = cells.reduce((s,p) => s + p.r, 0) / cells.length;
+  const mc = cells.reduce((s,p) => s + p.c, 0) / cells.length;
+  const b = document.createElement('div');
+  b.className = 'burst';
+  b.textContent = text;
+  b.style.left = ((mc + 0.5) * 100 / COLS) + '%';
+  b.style.top  = ((mr + 0.5) * 100 / ROWS) + '%';
+  shelf.appendChild(b);
+  setTimeout(() => b.remove(), 850);
+}
+
+/* ═══ 4. Обрушение и досыпка ═══ */
+function collapse(){
+  for (let c = 0; c < COLS; c++){
+    let write = ROWS - 1;
+    for (let r = ROWS - 1; r >= 0; r--){
+      if (grid[r][c]){
+        if (write !== r){ grid[write][c] = grid[r][c]; grid[r][c] = null; }
+        write--;
+      }
+    }
+    let above = 1;
+    for (let r = write; r >= 0; r--){
+      grid[r][c] = newTile(rnd(), -above, c);   // рождается над полкой
+      above++;
+    }
+  }
+  shelf.offsetHeight;   // заставляем браузер учесть стартовую позицию
+}
+
+/* ═══ 5. Есть ли вообще ход ═══ */
+function playable(){
+  const swap = (a, b) => { const t = grid[a.r][a.c]; grid[a.r][a.c] = grid[b.r][b.c]; grid[b.r][b.c] = t; };
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      for (const d of [{r:0,c:1},{r:1,c:0}]){
+        const r2 = r + d.r, c2 = c + d.c;
+        if (r2 >= ROWS || c2 >= COLS) continue;
+        const a = {r,c}, b = {r:r2,c:c2};
+        swap(a,b);
+        const ok = anyMatch();
+        swap(a,b);
+        if (ok) return true;
+      }
+  return false;
+}
+
+function reshuffle(){
+  const bag = [];
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) bag.push(grid[r][c]);
+  do {
+    for (let i = bag.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [bag[i], bag[j]] = [bag[j], bag[i]];
+    }
+    let i = 0;
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) grid[r][c] = bag[i++];
+  } while (anyMatch() || !playable());
+  render();
+}
+
+/* ═══ 6. Ход игрока ═══ */
+function markRing(r, c, on){
+  if (!on){ ring.classList.remove('on'); return; }
+  ring.style.left   = (c * 100 / COLS) + '%';
+  ring.style.top    = (r * 100 / ROWS) + '%';
+  ring.style.width  = (100 / COLS) + '%';
+  ring.style.height = (100 / ROWS) + '%';
+  ring.classList.add('on');
+}
+
+function tap(el){
+  if (locked) return;
+  if (swiped){ swiped = false; return; }   // это был свайп, а не нажатие
+  const pos = findAt(el);
+  if (!pos) return;
+
+  if (!picked){ picked = pos; markRing(pos.r, pos.c, true); return; }
+  if (picked.r === pos.r && picked.c === pos.c){ picked = null; markRing(0,0,false); return; }
+
+  const near = Math.abs(picked.r - pos.r) + Math.abs(picked.c - pos.c) === 1;
+  if (!near){ picked = pos; markRing(pos.r, pos.c, true); return; }
+
+  const a = picked;
+  picked = null;
+  markRing(0,0,false);
+  doSwap(a, pos);
+}
+
+async function doSwap(a, b){
+  locked = true;
+  const t = grid[a.r][a.c]; grid[a.r][a.c] = grid[b.r][b.c]; grid[b.r][b.c] = t;
+  render();
+  await sleep(210);
+
+  if (!anyMatch()){                             // ряд не собрался — возвращаем
+    const u = grid[a.r][a.c]; grid[a.r][a.c] = grid[b.r][b.c]; grid[b.r][b.c] = u;
+    render();
+    await sleep(210);
+    locked = false;
+    return;
+  }
+
+  moves--;
+  movesEl.textContent = moves;
+  await cascade();
+
+  if (moves <= 0) return finish();
+  if (!playable()) reshuffle();
+  save();
+  locked = false;
+}
+
+async function cascade(){
+  let mult = 1;
+  while (true){
+    const figures = clusters();
+    if (!figures.length) break;
+
+    figures.forEach(g => {
+      const points = worth(g.cells.length) * mult;
+      score += points;
+      const label = nameOf(g);
+      if (label)        burst(g.cells, '+' + points + ' · ' + label);
+      else if (mult > 1) burst(g.cells, '+' + points + ' · цепочка ×' + mult);
+    });
+    scoreEl.textContent = score;
+
+    const hits = figures.flatMap(g => g.cells);
+    hits.forEach(({r,c}) => grid[r][c] && grid[r][c].el.classList.add('gone'));
+    await sleep(220);
+    hits.forEach(({r,c}) => { if (grid[r][c]){ grid[r][c].el.remove(); grid[r][c] = null; } });
+
+    collapse();
+    render();
+    await sleep(280);
+    mult++;
+  }
+}
+
+/* ═══ 6b. Свайпы ═══
+   Жест разбирается прямо на полке: запоминаем корешок под пальцем,
+   ждём смещения дальше порога и решаем, в какую сторону меняем. */
+let drag = null, swiped = false;
+
+shelf.addEventListener('pointerdown', e => {
+  if (locked) return;
+  const el = e.target.closest('.book');
+  if (!el) return;
+  const pos = findAt(el);
+  if (!pos) return;
+  drag = { pos, x:e.clientX, y:e.clientY };
+  swiped = false;
+});
+
+shelf.addEventListener('pointermove', e => {
+  if (!drag || locked || swiped) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  const limit = Math.max(14, shelf.clientWidth / COLS * 0.34);
+  if (Math.abs(dx) < limit && Math.abs(dy) < limit) return;   // ещё не жест
+
+  let r = drag.pos.r, c = drag.pos.c;
+  if (Math.abs(dx) > Math.abs(dy)) c += dx > 0 ? 1 : -1;      // сильнее по горизонтали
+  else                             r += dy > 0 ? 1 : -1;
+
+  const from = drag.pos;
+  drag = null;
+  swiped = true;
+  picked = null;
+  markRing(0, 0, false);
+  if (r < 0 || c < 0 || r >= ROWS || c >= COLS) return;       // свайп за край полки
+  doSwap(from, { r, c });
+});
+
+const dropDrag = () => { drag = null; };
+shelf.addEventListener('pointerup', dropDrag);
+shelf.addEventListener('pointercancel', dropDrag);
+shelf.addEventListener('pointerleave', dropDrag);
+
+/* ═══ 6c. Память партии ═══
+   После каждого хода состояние полки кладётся в хранилище браузера.
+   Если страница закрылась, партия поднимается с того же места.
+   Всё в try — в некоторых просмотрщиках хранилище закрыто. */
+const SAVE_KEY = 'forzac-partiya';
+
+function save(){
+  try{
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      kinds: grid.map(row => row.map(t => t ? t.kind : 0)),
+      moves, score
+    }));
+  }catch(e){}
+}
+function loadSaved(){
+  try{ return JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); }catch(e){ return null; }
+}
+function wipeSaved(){
+  try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+}
+
+function buildFrom(kinds){
+  shelf.querySelectorAll('.book').forEach(el => el.remove());
+  grid = Array.from({ length:ROWS }, () => Array(COLS).fill(null));
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      grid[r][c] = newTile(kinds[r][c], r, c);
+}
+
+function resume(){
+  const st = loadSaved();
+  if (!st) return start();
+  buildFrom(st.kinds);
+  moves = st.moves; score = st.score;
+  movesEl.textContent = moves;
+  scoreEl.textContent = score;
+  picked = null; markRing(0, 0, false);
+  if (!playable()) reshuffle();
+  document.getElementById('resume').hidden = true;
+  veil.classList.add('off');
+  locked = false;
+}
+
+/* ═══ 7. Старт и финиш ═══ */
+function build(){
+  shelf.querySelectorAll('.book').forEach(el => el.remove());
+  grid = Array.from({ length:ROWS }, () => Array(COLS).fill(null));
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      grid[r][c] = newTile(rnd(), r, c);
+
+  let guard = 0;
+  while ((anyMatch() || !playable()) && guard++ < 60){
+    runs().flat().forEach(({r,c}) => {
+      grid[r][c].el.remove();
+      grid[r][c] = newTile(rnd(), r, c);
+    });
+    if (!anyMatch() && !playable()) reshuffle();
+  }
+}
+
+function start(){
+  moves = START_MOVES; score = 0;
+  movesEl.textContent = moves;
+  scoreEl.textContent = 0;
+  picked = null; markRing(0,0,false);
+  build();
+  document.getElementById('resume').hidden = true;
+  document.getElementById('veiltext').textContent =
+    'Проведите пальцем от корешка к соседнему.';
+  veil.classList.add('off');
+  locked = false;
+  save();
+}
+
+function finish(){
+  locked = true;
+  wipeSaved();
+  document.getElementById('resume').hidden = true;
+  document.getElementById('veiltext').textContent = 'Партия окончена. Можно сыграть ещё раз.';
+  veil.classList.remove('off');
+
+  let pct, say;
+  if (score >= 165){ pct = 20; say = 'Полка разобрана мастерски.'; }
+  else if (score >= 120){ pct = 15; say = 'Хороший счёт и чистые цепочки.'; }
+  else if (score >= 75){ pct = 10; say = 'Уверенная партия.'; }
+  else { pct = 5; say = 'Ходы кончились, но скидка ваша.'; }
+
+  document.getElementById('fin').textContent = 'Скидка ' + pct + '% на книгу';
+  document.getElementById('say').textContent = say + ' Набрано очков: ' + score + '.';
+  document.getElementById('code').textContent =
+    'FORZAC-' + pct + '-' + String(Math.floor(Math.random() * 9000) + 1000);
+  document.getElementById('dim').classList.add('on');
+  document.getElementById('close').focus();
+}
+
+document.getElementById('resume').addEventListener('click', resume);
+document.getElementById('go').addEventListener('click', start);
+
+(function offerResume(){
+  const st = loadSaved();
+  if (st && st.moves > 0){
+    document.getElementById('resume').hidden = false;
+    document.getElementById('veiltext').textContent =
+      'Прошлая партия не доиграна: осталось ходов ' + st.moves + ', очков ' + st.score + '.';
+  }
+})();
+document.getElementById('restart').addEventListener('click', () => {
+  document.getElementById('dim').classList.remove('on');
+  start();
+});
+document.getElementById('close').addEventListener('click', () =>
+  document.getElementById('dim').classList.remove('on'));
+document.getElementById('dim').addEventListener('click', () =>
+  document.getElementById('dim').classList.remove('on'));
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('dim').classList.remove('on');
+});
+
+build();
+</script>
+<script>
+/* Связка с Telegram: разворот на весь экран, свои цвета шапки
+   и системная кнопка «Назад» — возврат в меню бота.
+   Вне Telegram страница работает как обычная. */
+const tgApp = window.Telegram && window.Telegram.WebApp;
+if (tgApp){
+  tgApp.ready();
+  tgApp.expand();
+  try{
+    tgApp.setHeaderColor('#1B2233');
+    tgApp.setBackgroundColor('#E9E9E4');
+  }catch(e){}
+  try{
+    tgApp.BackButton.show();
+    tgApp.BackButton.onClick(() => { location.href = 'index.html'; });
+  }catch(e){}
+}
+</script>
+</body>
+</html>

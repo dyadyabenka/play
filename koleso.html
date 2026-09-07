@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Тяга — колесо удачи</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pine-deep:#0E211C;
+  --pine:#17392F;
+  --sage:#E6EBE2;
+  --paper:#FBFBF7;
+  --ink:#12251F;
+  --muted:#5E7268;
+  --hair:#D3DACE;
+  --berry:#C24232;
+  --citrus:#E5A03A;
+  --herb:#7CA25B;
+  --cocoa:#97613D;
+  --amber:#F2B441;
+  --amber-deep:#BE8620;
+}
+
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+
+body{
+  margin:0;
+  background:var(--pine-deep);
+  font-family:'Golos Text',system-ui,-apple-system,'Segoe UI',sans-serif;
+  font-size:16px;
+  line-height:1.5;
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  display:flex;
+  justify-content:center;
+}
+
+.app{
+  width:100%;
+  max-width:430px;
+  min-height:100dvh;
+  background:var(--sage);
+  overflow:hidden;
+  position:relative;
+}
+
+/* ─────────── шапка ─────────── */
+.bar{
+  background:var(--pine);
+  padding:14px 20px 0;
+  display:flex;
+  align-items:center;
+  gap:11px;
+}
+.bar svg{flex:none;}
+.brand{
+  font-family:'Unbounded',sans-serif;
+  font-weight:700;
+  font-size:17px;
+  color:var(--paper);
+}
+.status{
+  margin-left:auto;
+  font-size:12.5px;
+  color:#9FBBB0;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--herb);flex:none;}
+
+/* ─────────── герой ─────────── */
+.hero{
+  background:var(--pine);
+  padding:22px 20px 40px;
+  border-radius:0 0 30px 30px;
+  text-align:center;
+}
+.hero h1{
+  font-family:'Unbounded',sans-serif;
+  font-weight:800;
+  font-size:29px;
+  line-height:1.06;
+  color:var(--paper);
+  margin:8px 0 8px;
+}
+.lede{
+  margin:0 auto 20px;
+  max-width:26ch;
+  font-size:14.5px;
+  color:#9FBBB0;
+}
+
+.stage{width:100%;max-width:312px;aspect-ratio:1;margin:0 auto 24px;}
+.stage svg{display:block;width:100%;height:100%;}
+
+.sector-label{
+  font-family:'Golos Text',sans-serif;
+  font-weight:600;
+  font-size:12.5px;
+  letter-spacing:-.015em;
+  fill:#FFF9EE;
+  stroke:rgba(14,33,28,.42);
+  stroke-width:2.6px;
+  paint-order:stroke fill;
+}
+.hub-word{font-family:'Unbounded',sans-serif;font-weight:800;font-size:12px;fill:var(--pine);}
+
+.spin{
+  width:100%;border:0;border-radius:20px;padding:18px;
+  background:var(--amber);color:var(--ink);
+  font-family:'Unbounded',sans-serif;font-weight:800;font-size:17px;
+  cursor:pointer;
+  box-shadow:0 6px 0 var(--amber-deep);
+  transition:transform .09s ease,box-shadow .09s ease;
+}
+.spin:active:not(:disabled){transform:translateY(4px);box-shadow:0 2px 0 var(--amber-deep);}
+.spin:disabled{background:#3A5A50;color:#8FA79C;box-shadow:0 6px 0 #244037;cursor:default;}
+.spin:focus-visible{outline:3px solid var(--paper);outline-offset:3px;}
+.tries{margin:40px 0 0;font-size:13px;color:#9FBBB0;min-height:20px;}
+
+/* ─────────── купон ─────────── */
+.coupon{
+  margin:18px 16px 0;
+  background:var(--paper);
+  border-radius:20px;
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 10px 24px rgba(14,33,28,.10);
+}
+.coupon[hidden]{display:none;}
+.coupon-top{padding:18px 20px 16px;}
+.coupon-tag{
+  display:inline-block;
+  font-size:12px;font-weight:600;color:var(--berry);
+  background:#F7E4E0;border-radius:8px;padding:3px 9px;margin-bottom:9px;
+}
+.coupon-top h2{
+  font-family:'Unbounded',sans-serif;font-weight:700;
+  font-size:21px;line-height:1.15;margin:0 0 5px;
+}
+.coupon-top p{margin:0;font-size:13.5px;color:var(--muted);}
+
+.perforation{position:relative;height:22px;border-top:2px dashed var(--hair);margin:0 20px;}
+.perforation::before,.perforation::after{
+  content:'';position:absolute;top:-13px;
+  width:24px;height:24px;border-radius:50%;background:var(--sage);
+}
+.perforation::before{left:-32px;}
+.perforation::after{right:-32px;}
+
+.coupon-bottom{padding:0 20px 18px;text-align:center;}
+.code{
+  display:block;
+  font-family:'Unbounded',sans-serif;font-weight:700;
+  font-size:24px;letter-spacing:.08em;color:var(--ink);
+  margin-bottom:6px;
+}
+.expiry{margin:0;font-size:12.5px;color:var(--muted);}
+
+/* ─────────── секции ─────────── */
+.block{padding:28px 20px 0;}
+.block h3{font-family:'Unbounded',sans-serif;font-weight:700;font-size:18px;margin:0 0 4px;}
+.block > p.sub{margin:0 0 16px;font-size:13.5px;color:var(--muted);}
+
+.odds{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:11px;}
+.odds li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:baseline;}
+.odds .name{font-size:14.5px;font-weight:500;}
+.odds .pct{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.track{grid-column:1 / -1;height:7px;border-radius:4px;background:#D6DDD2;overflow:hidden;}
+.fill{height:100%;border-radius:4px;}
+
+.steps{list-style:none;counter-reset:s;margin:0;padding:0;display:flex;flex-direction:column;gap:14px;}
+.steps li{counter-increment:s;display:grid;grid-template-columns:32px 1fr;gap:13px;align-items:start;}
+.steps li::before{
+  content:counter(s);
+  width:32px;height:32px;border-radius:50%;
+  background:var(--pine);color:var(--paper);
+  font-family:'Unbounded',sans-serif;font-weight:700;font-size:14px;
+  display:flex;align-items:center;justify-content:center;
+}
+.steps strong{display:block;font-size:15px;font-weight:600;margin-bottom:1px;}
+.steps span{font-size:13.5px;color:var(--muted);}
+
+.feed{list-style:none;margin:0;padding:0;}
+.feed li{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--hair);}
+.feed li:last-child{border-bottom:0;}
+.chip{
+  width:34px;height:34px;border-radius:11px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Unbounded',sans-serif;font-weight:700;font-size:13px;color:#FFF9EE;
+}
+.feed .who{font-size:14.5px;font-weight:500;}
+.feed .what{font-size:13px;color:var(--muted);}
+.feed time{margin-left:auto;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;}
+
+.rules{margin:26px 20px 0;padding:16px 18px;background:#DFE5DB;border-radius:16px;}
+.rules p{margin:0;font-size:12.5px;line-height:1.55;color:var(--muted);}
+
+.foot{
+  margin-top:26px;padding:20px 20px calc(26px + env(safe-area-inset-bottom));
+  background:var(--pine);color:#9FBBB0;
+  border-radius:30px 30px 0 0;
+  font-size:12.5px;text-align:center;
+}
+.foot strong{display:block;color:var(--paper);font-family:'Unbounded',sans-serif;font-weight:700;font-size:14px;margin-bottom:4px;}
+
+/* ─────────── шторка выигрыша ─────────── */
+.scrim{
+  position:fixed;inset:0;background:rgba(8,20,16,.74);
+  backdrop-filter:blur(4px);
+  opacity:0;pointer-events:none;transition:opacity .26s ease;z-index:20;
+}
+.scrim[data-open="true"]{opacity:1;pointer-events:auto;}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;margin:0 auto;
+  max-width:430px;background:var(--paper);
+  border-radius:28px 28px 0 0;padding:28px 24px calc(24px + env(safe-area-inset-bottom));
+  transform:translateY(102%);
+  transition:transform .36s cubic-bezier(.2,.9,.3,1);
+  z-index:21;text-align:center;
+}
+.scrim[data-open="true"] + .sheet{transform:translateY(0);}
+.badge{
+  width:64px;height:64px;border-radius:22px;margin:0 auto 14px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Unbounded',sans-serif;font-weight:800;font-size:22px;color:#FFF9EE;
+}
+.sheet h2{font-family:'Unbounded',sans-serif;font-weight:800;font-size:26px;line-height:1.12;margin:0 0 8px;}
+.sheet p{margin:0 0 20px;font-size:15px;color:var(--muted);}
+.done{
+  width:100%;border:0;border-radius:16px;padding:16px;
+  background:var(--ink);color:var(--paper);
+  font-family:'Golos Text',sans-serif;font-weight:600;font-size:16px;cursor:pointer;
+}
+.done:focus-visible{outline:3px solid var(--amber);outline-offset:2px;}
+
+.demo{
+  position:fixed;top:10px;right:calc(50% - 215px + 12px);
+  background:rgba(18,37,31,.86);color:#CFE0D8;
+  border:0;border-radius:10px;padding:7px 11px;
+  font-family:inherit;font-size:12px;cursor:pointer;z-index:30;
+}
+.demo[hidden]{display:none;}
+.demo:focus-visible{outline:2px solid var(--amber);}
+@media (max-width:460px){.demo{right:12px;}}
+
+@media (prefers-reduced-motion:reduce){
+  .sheet,.scrim{transition-duration:.01ms;}
+}
+
+/* прокрутка живёт внутри приложения, а не в документе:
+   так свайп вниз не закрывает окно просмотрщика */
+html,body{height:100dvh;overflow:hidden;overscroll-behavior:none;}
+.app{
+  height:100dvh;min-height:0;
+  overflow-y:auto;overflow-x:hidden;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="bar">
+    <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+      <circle cx="15" cy="15" r="15" fill="#F2B441"/>
+      <ellipse cx="15" cy="15" rx="6.4" ry="9.4" fill="#17392F" transform="rotate(-28 15 15)"/>
+      <path d="M12.4 8.6 C16.4 11.4 13.6 18.6 17.6 21.4" stroke="#F2B441" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="brand">Тяга</span>
+    <span class="status"><span class="dot"></span>Открыто до 21:00</span>
+  </header>
+
+  <section class="hero">
+    <h1>Колесо удачи</h1>
+    <p class="lede">Одно вращение в сутки. Пустых секторов нет — что-нибудь достанется точно.</p>
+
+    <div class="stage">
+      <svg viewBox="0 0 300 320" role="img" aria-label="Колесо с восемью призами">
+        <!-- вращается только этот слой -->
+        <g id="disc">
+          <circle cx="150" cy="170" r="149" fill="#0E211C"/>
+          <g id="sectors"></g>
+          <g id="labels"></g>
+          <g id="pegs"></g>
+        </g>
+        <!-- центр и стрелка неподвижны -->
+        <circle cx="150" cy="170" r="33" fill="#FBFBF7"/>
+        <circle cx="150" cy="170" r="28" fill="none" stroke="#E5A03A" stroke-width="2"/>
+        <text class="hub-word" x="150" y="174.5" text-anchor="middle">ТЯГА</text>
+        <g id="needle">
+          <path d="M150 40 L134 4 A17 17 0 0 1 166 4 Z" fill="#FBFBF7" stroke="#0E211C" stroke-width="2.5" stroke-linejoin="round"/>
+          <circle cx="150" cy="10" r="5" fill="#17392F"/>
+        </g>
+      </svg>
+    </div>
+
+    <button class="spin" id="spin">Крутить</button>
+    <p class="tries" id="tries">Сегодня доступна 1 попытка</p>
+  </section>
+
+  <article class="coupon" id="coupon" hidden>
+    <div class="coupon-top">
+      <span class="coupon-tag" id="couponTag">Купон активен</span>
+      <h2 id="couponTitle">—</h2>
+      <p id="couponHint">—</p>
+    </div>
+    <div class="perforation"></div>
+    <div class="coupon-bottom">
+      <span class="code" id="couponCode">—</span>
+      <p class="expiry" id="couponExpiry">—</p>
+    </div>
+  </article>
+
+  <section class="block">
+    <h3>Что в колесе</h3>
+    <p class="sub">Показываем честные шансы — ровно те, что заданы в настройках.</p>
+    <ul class="odds" id="odds"></ul>
+  </section>
+
+  <section class="block">
+    <h3>Как забрать</h3>
+    <p class="sub">Купон живёт до закрытия кофейни в день вращения.</p>
+    <ol class="steps">
+      <li><div><strong>Крутите колесо</strong><span>Одна попытка в сутки, следующая открывается через 24 часа.</span></div></li>
+      <li><div><strong>Показываете код бариста</strong><span>Достаточно открыть этот экран на кассе, распечатывать ничего не нужно.</span></div></li>
+      <li><div><strong>Забираете свой напиток</strong><span>Бариста отмечает код в системе, чтобы им нельзя было воспользоваться дважды.</span></div></li>
+    </ol>
+  </section>
+
+  <section class="block">
+    <h3>Сегодня выиграли</h3>
+    <p class="sub">Последние вращения гостей.</p>
+    <ul class="feed" id="feed"></ul>
+  </section>
+
+  <div class="rules">
+    <p>Купон именной и действует один раз. Не суммируется с другими акциями и картой постоянного гостя. Кофейня может изменить состав призов, уже выданные купоны при этом остаются в силе.</p>
+  </div>
+
+  <footer class="foot">
+    <strong>Кофейня Тяга</strong>
+    Улица Ленина, 14 — ежедневно с 8:00 до 21:00
+  </footer>
+
+</div>
+
+<button class="demo" id="demo" hidden>Сбросить попытку</button>
+
+<div class="scrim" id="scrim"></div>
+<section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="prizeTitle">
+  <div class="badge" id="badge">%</div>
+  <h2 id="prizeTitle">—</h2>
+  <p id="prizeHint">—</p>
+  <button class="done" id="done">Забрать купон</button>
+</section>
+
+<script>
+/* ═══ 1. Призы. Всё, что меняется под клиента, живёт здесь ═══
+   lines  — подпись на секторе, можно одной или двумя строками
+   weight — «билетиков» в мешке: чем больше, тем чаще выпадает
+   codes  — запас промокодов, выдаются по одному                     */
+const PRIZES = [
+  { lines:['−5%'],            short:'5%',  title:'Скидка 5%',                hint:'На любой напиток из меню.',               weight:30, color:'#C24232', codes:['TYAGA-5A71','TYAGA-5B08','TYAGA-5C34','TYAGA-5D19'] },
+  { lines:['Круассан'],       short:'КР',  title:'Круассан за полцены',      hint:'К любому напитку, пока есть на витрине.', weight:8,  color:'#E5A03A', codes:['TYAGA-KR12','TYAGA-KR45'] },
+  { lines:['−10%'],           short:'10%', title:'Скидка 10%',               hint:'На весь чек, включая выпечку.',           weight:18, color:'#7CA25B', codes:['TYAGA-10D9','TYAGA-10E2','TYAGA-10F7'] },
+  { lines:['Кофе даром'],     short:'★',   title:'Кофе бесплатно',           hint:'Любой напиток среднего размера.',         weight:1,  color:'#97613D', codes:['TYAGA-GOLD1'] },
+  { lines:['Сироп'],          short:'СР',  title:'Сироп в подарок',          hint:'Ваниль, карамель или лесной орех.',       weight:24, color:'#C24232', codes:['TYAGA-SR03','TYAGA-SR19','TYAGA-SR56'] },
+  { lines:['−20%'],           short:'20%', title:'Скидка 20%',               hint:'На весь чек. Редкий сектор.',             weight:2,  color:'#E5A03A', codes:['TYAGA-20X1'] },
+  { lines:['Апгрейд'],        short:'XL',  title:'Большой по цене среднего', hint:'Доплачивать за размер не нужно.',         weight:12, color:'#7CA25B', codes:['TYAGA-UP24','TYAGA-UP88'] },
+  { lines:['2-й кофе'],       short:'2Х',  title:'Второй кофе за полцены',   hint:'Приходите с кем-нибудь.',                 weight:5,  color:'#97613D', codes:['TYAGA-2ND6','TYAGA-2ND9'] }
+];
+
+const FEED = [
+  { who:'Марина К.', prize:4, time:'14:22' },
+  { who:'Илья',      prize:0, time:'13:47' },
+  { who:'Ася В.',    prize:6, time:'12:10' },
+  { who:'Дмитрий',   prize:2, time:'11:35' },
+  { who:'Полина Р.', prize:1, time:'09:58' }
+];
+
+const SECTOR = 360 / PRIZES.length;
+const CX = 150, CY = 170, R = 143, LABEL_R = 100;
+const TOTAL = PRIZES.reduce((s,p) => s + p.weight, 0);
+const NS = 'http://www.w3.org/2000/svg';
+
+const toXY = (deg, r) => {
+  const a = (deg - 90) * Math.PI / 180;
+  return [CX + r * Math.cos(a), CY + r * Math.sin(a)];
+};
+const make = (tag, attrs) => {
+  const el = document.createElementNS(NS, tag);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  return el;
+};
+
+/* ═══ 2. Рисуем секторы, штырьки и подписи ═══ */
+const sectorsEl = document.getElementById('sectors');
+const pegsEl    = document.getElementById('pegs');
+const labelsEl  = document.getElementById('labels');
+
+PRIZES.forEach((prize, i) => {
+  const center = i * SECTOR;
+  const [x0,y0] = toXY(center - SECTOR/2, R);
+  const [x1,y1] = toXY(center + SECTOR/2, R);
+
+  sectorsEl.appendChild(make('path', {
+    d:`M ${CX} ${CY} L ${x0} ${y0} A ${R} ${R} 0 0 1 ${x1} ${y1} Z`,
+    fill:prize.color, stroke:'#0E211C', 'stroke-width':'1.5'
+  }));
+
+  const [px,py] = toXY(center + SECTOR/2, R - 7);
+  pegsEl.appendChild(make('circle', { cx:px, cy:py, r:3.4, fill:'#FFF9EE', opacity:'.85' }));
+
+  const g = make('g', { transform:`rotate(${center} ${CX} ${CY})` });
+  const text = make('text', {
+    class:'sector-label', 'text-anchor':'middle', x:CX, y:CY - LABEL_R
+  });
+  const two = prize.lines.length === 2;
+  prize.lines.forEach((line, n) => {
+    const ts = make('tspan', { x:CX, dy: two ? (n === 0 ? '-0.18em' : '1.08em') : '0.34em' });
+    ts.textContent = line;
+    text.appendChild(ts);
+  });
+  g.appendChild(text);
+  labelsEl.appendChild(g);
+});
+
+/* ═══ 3. Списки под колесом ═══ */
+const oddsEl = document.getElementById('odds');
+const maxWeight = Math.max(...PRIZES.map(p => p.weight));
+[...PRIZES].sort((a,b) => b.weight - a.weight).forEach(p => {
+  const pct = p.weight / TOTAL * 100;
+  const li = document.createElement('li');
+  li.innerHTML =
+    `<span class="name">${p.title}</span>` +
+    `<span class="pct">${pct < 1 ? pct.toFixed(1) : Math.round(pct)}%</span>` +
+    `<span class="track"><span class="fill" style="width:${p.weight / maxWeight * 100}%;background:${p.color}"></span></span>`;
+  oddsEl.appendChild(li);
+});
+
+const feedEl = document.getElementById('feed');
+FEED.forEach(f => {
+  const p = PRIZES[f.prize];
+  const li = document.createElement('li');
+  li.innerHTML =
+    `<span class="chip" style="background:${p.color}">${p.short}</span>` +
+    `<span><span class="who">${f.who}</span><br><span class="what">${p.title}</span></span>` +
+    `<time>${f.time}</time>`;
+  feedEl.appendChild(li);
+});
+
+/* ═══ 4. Отрисовка кадра ═══
+   Диск поворачивается целиком, вместе с секторами и подписями.
+   Неподвижны только центральная накладка и стрелка сверху. */
+const disc = document.getElementById('disc');
+let rotation = 0;
+
+function render(){
+  disc.setAttribute('transform', `rotate(${rotation} ${CX} ${CY})`);
+}
+render();
+
+/* ═══ 5. Логика вращения ═══
+   Приз выбирается ПЕРВЫМ, угол подгоняется под него вторым. */
+const spinBtn = document.getElementById('spin');
+const tries   = document.getElementById('tries');
+const scrim   = document.getElementById('scrim');
+const doneBtn = document.getElementById('done');
+const demoBtn = document.getElementById('demo');
+const coupon  = document.getElementById('coupon');
+const needle  = document.getElementById('needle');
+
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SPIN_MS = reduced ? 420 : 4400;
+
+let spinning = false, used = false, ticker = null;
+
+function pickIndex(){
+  const bag = PRIZES.map((p,i) => ({ i, w: p.codes.length ? p.weight : 0 }));
+  const total = bag.reduce((s,b) => s + b.w, 0);
+  if (!total) return -1;
+  let ticket = Math.random() * total;
+  for (const b of bag){ ticket -= b.w; if (ticket <= 0) return b.i; }
+  return bag[bag.length - 1].i;
+}
+
+function spin(){
+  if (spinning || used) return;
+  const idx = pickIndex();
+  if (idx === -1){
+    tries.textContent = 'Промокоды на сегодня закончились. Заходите завтра.';
+    spinBtn.disabled = true;
+    return;
+  }
+  spinning = true;
+  spinBtn.disabled = true;
+  spinBtn.textContent = 'Крутится';
+  tries.textContent = '';
+
+  const jitter = Math.random() * (SECTOR - 16) - (SECTOR - 16) / 2;
+  const target = -(idx * SECTOR) + jitter;
+  const delta  = ((target - (rotation % 360)) % 360 + 360) % 360;
+  const from   = rotation;
+  const total  = 360 * 5 + delta;
+  const t0     = performance.now();
+
+  function frame(now){
+    const t = Math.min(1, (now - t0) / SPIN_MS);
+    const eased = 1 - Math.pow(1 - t, 4);   // плавное затухание
+    rotation = from + total * eased;
+    render();
+    if (t < 1) requestAnimationFrame(frame);
+    else finish(idx);
+  }
+  requestAnimationFrame(frame);
+}
+
+function finish(idx){
+  spinning = false;
+  used = true;
+  const p = PRIZES[idx];
+  const code = p.codes.shift();
+
+  const badge = document.getElementById('badge');
+  badge.textContent = p.short;
+  badge.style.background = p.color;
+  document.getElementById('prizeTitle').textContent = p.title;
+  document.getElementById('prizeHint').textContent = p.hint;
+
+  document.getElementById('couponTitle').textContent = p.title;
+  document.getElementById('couponHint').textContent = p.hint;
+  document.getElementById('couponCode').textContent = code;
+  document.getElementById('couponExpiry').textContent = 'Действует сегодня до 21:00';
+  coupon.hidden = false;
+
+  scrim.dataset.open = 'true';
+  doneBtn.focus();
+
+  spinBtn.textContent = 'Попытка использована';
+  startCountdown(Date.now() + 24 * 60 * 60 * 1000);
+  demoBtn.hidden = false;
+}
+
+function startCountdown(until){
+  clearInterval(ticker);
+  const pad = n => String(n).padStart(2, '0');
+  const tick = () => {
+    const left = Math.max(0, until - Date.now());
+    tries.textContent = 'Следующее вращение через '
+      + pad(Math.floor(left / 3600000)) + ':'
+      + pad(Math.floor(left % 3600000 / 60000)) + ':'
+      + pad(Math.floor(left % 60000 / 1000));
+    if (!left){ clearInterval(ticker); reset(); }
+  };
+  tick();
+  ticker = setInterval(tick, 1000);
+}
+
+function reset(){
+  clearInterval(ticker);
+  used = false;
+  spinBtn.disabled = false;
+  spinBtn.textContent = 'Крутить';
+  tries.textContent = 'Сегодня доступна 1 попытка';
+  demoBtn.hidden = true;
+}
+
+function closeSheet(){
+  scrim.dataset.open = 'false';
+  coupon.scrollIntoView({ behavior:'smooth', block:'center' });
+  spinBtn.focus();
+}
+
+spinBtn.addEventListener('click', spin);
+doneBtn.addEventListener('click', closeSheet);
+scrim.addEventListener('click', closeSheet);
+demoBtn.addEventListener('click', reset);
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && scrim.dataset.open === 'true') closeSheet();
+});
+</script>
+<script>
+/* Связка с Telegram: разворот на весь экран, свои цвета шапки
+   и системная кнопка «Назад» — возврат в меню бота.
+   Вне Telegram страница работает как обычная. */
+const tgApp = window.Telegram && window.Telegram.WebApp;
+if (tgApp){
+  tgApp.ready();
+  tgApp.expand();
+  try{
+    tgApp.setHeaderColor('#17392F');
+    tgApp.setBackgroundColor('#E6EBE2');
+  }catch(e){}
+  try{
+    tgApp.BackButton.show();
+    tgApp.BackButton.onClick(() => { location.href = 'index.html'; });
+  }catch(e){}
+}
+</script>
+</body>
+</html>
