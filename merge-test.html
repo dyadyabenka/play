@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Глазурь — собери торт</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --choco:#2E1D1B;
+  --choco-deep:#1E1211;
+  --page:#EFE7E2;
+  --card:#FDFAF8;
+  --ink:#2A1E1C;
+  --muted:#7A6660;
+  --hair:#DCCEC8;
+  --pink:#E2789B;
+  --berry:#C0405F;
+  --gold:#D9A24A;
+  --cream:#F6E7D3;
+  --mint:#7FBFA8;
+}
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0;background:var(--choco-deep);
+  font-family:'Nunito',system-ui,-apple-system,sans-serif;
+  font-size:16px;line-height:1.5;color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  display:flex;justify-content:center;
+}
+.app{width:100%;max-width:430px;min-height:100dvh;background:var(--page);overflow:hidden;}
+
+/* шапка */
+.bar{background:var(--choco);padding:14px 20px;display:flex;align-items:center;gap:11px;}
+.sign{width:30px;height:30px;flex:none;}
+.brand{font-family:'Comfortaa',cursive;font-weight:700;font-size:19px;color:var(--cream);}
+.where{margin-left:auto;font-size:12.5px;color:#B79C93;}
+
+/* игровая зона */
+.zone{background:var(--choco);padding:4px 16px 24px;border-radius:0 0 28px 28px;text-align:center;}
+.title{font-family:'Comfortaa',cursive;font-weight:700;font-size:26px;line-height:1.14;color:var(--cream);margin:10px 0 6px;}
+.lead{margin:0 auto 16px;max-width:30ch;font-size:13.5px;color:#B79C93;}
+
+.hud{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.hud div{background:rgba(255,255,255,.07);border-radius:13px;padding:8px 4px;}
+.hud .k{display:block;font-size:11px;color:#B79C93;margin-bottom:1px;}
+.hud .v{display:block;font-family:'Comfortaa',cursive;font-weight:700;font-size:17px;color:var(--cream);font-variant-numeric:tabular-nums;}
+
+.grid{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:7px;
+  max-width:330px;margin:0 auto 16px;
+  background:#241615;padding:9px;border-radius:18px;
+  touch-action:none;
+}
+.cell,.slot{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;}
+.cell{
+  aspect-ratio:1;border-radius:12px;
+  background:rgba(255,255,255,.055);
+  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.06);
+  display:flex;align-items:center;justify-content:center;
+  transition:background .14s ease, box-shadow .14s ease, transform .14s ease;
+}
+.cell svg{width:86%;height:86%;display:block;pointer-events:none;}
+.cell.busy{background:rgba(255,255,255,.1);cursor:grab;}
+.cell.lift{opacity:.34;}
+.cell.aim{background:rgba(226,120,155,.28);box-shadow:inset 0 0 0 2px var(--pink);}
+.cell.pop{animation:pop .3s ease;}
+@keyframes pop{0%{transform:scale(.6);}60%{transform:scale(1.14);}100%{transform:scale(1);}}
+
+.ghost{position:fixed;width:62px;height:62px;pointer-events:none;z-index:40;transform:translate(-50%,-50%) scale(1.12);filter:drop-shadow(0 6px 10px rgba(0,0,0,.45));}
+.ghost svg{width:100%;height:100%;}
+
+.queue{display:flex;align-items:center;gap:7px;justify-content:center;margin-bottom:6px;touch-action:none;}
+.slot{width:46px;height:46px;border-radius:12px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;flex:none;}
+.slot svg{width:82%;height:82%;}
+.slot.head{
+  width:60px;height:60px;background:rgba(255,255,255,.13);
+  box-shadow:inset 0 0 0 2px var(--pink);cursor:grab;
+}
+.slot.faded{opacity:.45;}
+.qlabel{margin:0 0 10px;font-size:12px;color:#B79C93;}
+
+.veil{
+  position:absolute;inset:0;z-index:12;background:rgba(20,12,11,.92);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:22px;
+}
+.veil.off{display:none;}
+.veil p{margin:0;max-width:25ch;font-size:13.5px;color:#C3ADA4;}
+.play{
+  border:0;border-radius:16px;padding:14px 32px;background:var(--pink);color:#33141F;
+  font-family:'Comfortaa',cursive;font-weight:700;font-size:18px;cursor:pointer;
+}
+.play:focus-visible{outline:3px solid var(--cream);outline-offset:3px;}
+.stage{position:relative;touch-action:none;}
+
+/* секции */
+.sec{padding:26px 20px 0;}
+.sec h3{font-family:'Comfortaa',cursive;font-weight:700;font-size:19px;margin:0 0 4px;}
+.sec .sub{margin:0 0 15px;font-size:13.5px;color:var(--muted);}
+
+.ladder{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;}
+.ladder li{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:14px;padding:10px 14px;}
+.ladder .pic{width:38px;height:38px;flex:none;}
+.ladder b{font-size:14.5px;font-weight:700;}
+.ladder em{display:block;font-style:normal;font-size:12.5px;color:var(--muted);}
+.ladder .pc{margin-left:auto;font-family:'Comfortaa',cursive;font-weight:700;font-size:17px;color:var(--berry);}
+
+.rules{list-style:none;counter-reset:n;margin:0;padding:0;display:flex;flex-direction:column;gap:13px;}
+.rules li{counter-increment:n;display:grid;grid-template-columns:29px 1fr;gap:12px;align-items:start;}
+.rules li::before{
+  content:counter(n);width:29px;height:29px;border-radius:50%;
+  background:var(--choco);color:var(--cream);
+  font-family:'Comfortaa',cursive;font-weight:700;font-size:13px;
+  display:flex;align-items:center;justify-content:center;
+}
+.rules strong{display:block;font-size:14.5px;font-weight:700;}
+.rules span{font-size:13.5px;color:var(--muted);}
+
+.fine{margin:24px 20px 0;padding:15px 17px;background:var(--hair);border-radius:15px;}
+.fine p{margin:0;font-size:12.5px;line-height:1.55;color:#6B564F;}
+
+.foot{
+  margin-top:24px;padding:20px 20px calc(26px + env(safe-area-inset-bottom));
+  background:var(--choco);color:#B79C93;border-radius:28px 28px 0 0;
+  font-size:12.5px;text-align:center;
+}
+.foot strong{display:block;color:var(--cream);font-family:'Comfortaa',cursive;font-weight:700;font-size:16px;margin-bottom:4px;}
+
+/* итог */
+.dim{position:fixed;inset:0;background:rgba(18,10,9,.8);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .26s ease;z-index:20;}
+.dim.on{opacity:1;pointer-events:auto;}
+.done{
+  position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:430px;
+  background:var(--card);border-radius:26px 26px 0 0;
+  padding:26px 24px calc(24px + env(safe-area-inset-bottom));
+  transform:translateY(102%);transition:transform .36s cubic-bezier(.2,.9,.3,1);
+  z-index:21;text-align:center;
+}
+.dim.on + .done{transform:translateY(0);}
+.done .big{width:92px;height:92px;margin:0 auto 10px;}
+.done h2{font-family:'Comfortaa',cursive;font-weight:700;font-size:25px;line-height:1.15;margin:0 0 6px;}
+.done .say{margin:0 0 16px;font-size:14.5px;color:var(--muted);}
+.slip{border:2px dashed var(--hair);border-radius:15px;padding:14px;margin-bottom:15px;background:#FFFCF9;}
+.slip .code{display:block;font-family:'Comfortaa',cursive;font-weight:700;font-size:21px;letter-spacing:.05em;}
+.slip .till{display:block;font-size:12.5px;color:var(--muted);margin-top:3px;}
+.again{
+  width:100%;border:0;border-radius:15px;padding:15px;background:var(--choco);color:var(--cream);
+  font-family:'Nunito',sans-serif;font-weight:700;font-size:16px;cursor:pointer;
+}
+.again:focus-visible{outline:3px solid var(--pink);outline-offset:2px;}
+
+@media (prefers-reduced-motion:reduce){
+  .cell,.done,.dim{transition-duration:.01ms;}
+  .cell.pop{animation:none;}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="bar">
+    <svg class="sign" viewBox="0 0 30 30" aria-hidden="true">
+      <circle cx="15" cy="15" r="15" fill="#E2789B"/>
+      <path d="M8 21 h14 v-4 H8 Z" fill="#F6E7D3"/>
+      <path d="M9 17 C9 11 21 11 21 17 Z" fill="#FDFAF8"/>
+      <circle cx="15" cy="9.5" r="2.4" fill="#C0405F"/>
+    </svg>
+    <span class="brand">Глазурь</span>
+    <span class="where">Кондитерская</span>
+  </header>
+
+  <section class="zone">
+    <h1 class="title">Собери торт</h1>
+    <p class="lead">Перетащите одинаковые сладости друг на друга — получится следующая. Дойдите от ягоды до торта.</p>
+
+    <div class="hud">
+      <div><span class="k">В запасе</span><span class="v" id="left">0</span></div>
+      <div><span class="k">Очки</span><span class="v" id="score">0</span></div>
+      <div><span class="k">Лучшее</span><span class="v" id="best">—</span></div>
+    </div>
+
+    <div class="stage">
+      <div class="grid" id="grid"></div>
+
+      <p class="qlabel">Запас — тяните крупную влево на поле</p>
+      <div class="queue" id="queue"></div>
+
+      <div class="veil" id="veil">
+        <p>Тяните сладость из запаса на свободную клетку. Две одинаковые сливаются в одну покрупнее.</p>
+        <button class="play" id="play">Начать</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h3>Лестница сладостей</h3>
+    <p class="sub">Скидка зависит от того, до чего вы дошли. Каждая ступень — две предыдущие.</p>
+    <ul class="ladder" id="ladder"></ul>
+  </section>
+
+  <section class="sec">
+    <h3>Как играть</h3>
+    <p class="sub">Запас конечен, поэтому место на доске дороже, чем кажется.</p>
+    <ol class="rules">
+      <li><div><strong>Тяните из запаса на поле</strong><span>Крупная сладость слева — следующая в очереди. За ней видно, что придёт потом.</span></div></li>
+      <li><div><strong>Складывайте одинаковые</strong><span>Тащите одну на другую того же вида. Можно и прямо из запаса на подходящую клетку.</span></div></li>
+      <li><div><strong>Берегите свободные клетки</strong><span>Игра кончается, когда запас пуст и складывать больше нечего. Забитая доска — самая частая причина проиграть рано.</span></div></li>
+    </ol>
+  </section>
+
+  <div class="fine">
+    <p>Одна игра со скидкой в день на гостя. Код действует 10 дней, на один заказ в кондитерской. Не суммируется с акциями выходного дня и картой постоянного гостя.</p>
+  </div>
+
+  <footer class="foot">
+    <strong>Кондитерская Глазурь</strong>
+    Набережная, 12 — ежедневно с 9:00 до 21:00
+  </footer>
+
+</div>
+
+<div class="dim" id="dim"></div>
+<section class="done" id="done" role="dialog" aria-modal="true" aria-labelledby="fin">
+  <div class="big" id="big"></div>
+  <h2 id="fin">—</h2>
+  <p class="say" id="say">—</p>
+  <div class="slip">
+    <span class="code" id="code">—</span>
+    <span class="till">Действует 10 дней с сегодняшнего дня</span>
+  </div>
+  <button class="again" id="again">Играть ещё раз</button>
+</section>
+
+<script>
+/* ═══ 1. Лестница сладостей ═══
+   Каждая ступень получается из двух предыдущих.        */
+const SWEETS = [
+  { name:'Ягода',   note:'Начало всему',            pct:null },
+  { name:'Макарон', note:'Две ягоды',               pct:null },
+  { name:'Капкейк', note:'Два макарона',            pct:null },
+  { name:'Эклер',   note:'Два капкейка',            pct:10 },
+  { name:'Тарт',    note:'Два эклера',              pct:15 },
+  { name:'Торт',    note:'Два тарта — вершина',     pct:20 }
+];
+
+/* рисуем сладости кодом */
+function sweetSVG(t){
+  const s = c => `<svg viewBox="0 0 100 100" aria-hidden="true">${c}</svg>`;
+  switch(t){
+    case 0: return s(`
+      <circle cx="50" cy="56" r="24" fill="#C0405F"/>
+      <circle cx="42" cy="48" r="7" fill="rgba(255,255,255,.34)"/>
+      <path d="M50 32 C58 22 70 24 70 24 C70 32 60 36 50 34 Z" fill="#7FBFA8"/>`);
+    case 1: return s(`
+      <ellipse cx="50" cy="36" rx="30" ry="16" fill="#E2789B"/>
+      <rect x="20" y="44" width="60" height="13" rx="6" fill="#F6E7D3"/>
+      <ellipse cx="50" cy="64" rx="30" ry="16" fill="#E2789B"/>
+      <ellipse cx="40" cy="32" rx="9" ry="4" fill="rgba(255,255,255,.34)"/>`);
+    case 2: return s(`
+      <path d="M28 52 h44 l-6 30 h-32 Z" fill="#C98F5E"/>
+      <path d="M34 60 h32 M33 70 h34" stroke="rgba(255,255,255,.28)" stroke-width="3"/>
+      <path d="M26 52 C26 26 74 26 74 52 Z" fill="#F3A8C0"/>
+      <path d="M32 46 C36 34 50 32 50 32" stroke="rgba(255,255,255,.4)" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <circle cx="50" cy="24" r="6.5" fill="#C0405F"/>`);
+    case 3: return s(`
+      <rect x="12" y="40" width="76" height="30" rx="15" fill="#E4B57E"/>
+      <path d="M16 42 C28 32 72 32 84 42 C84 52 74 54 62 50 C50 46 36 56 24 52 C18 50 16 46 16 42 Z" fill="#5C3A2E"/>
+      <path d="M30 40 C36 36 44 36 50 38" stroke="rgba(255,255,255,.32)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      <circle cx="70" cy="62" r="4" fill="#F6E7D3"/>`);
+    case 4: return s(`
+      <circle cx="50" cy="52" r="34" fill="#D9A24A"/>
+      <circle cx="50" cy="52" r="26" fill="#A8465E"/>
+      <g stroke="#E8C68A" stroke-width="5" stroke-linecap="round">
+        <path d="M32 40 L68 64"/><path d="M32 64 L68 40"/><path d="M50 26 L50 78"/>
+      </g>
+      <circle cx="50" cy="52" r="6" fill="#C0405F"/>
+      <circle cx="34" cy="52" r="4.5" fill="#C0405F"/>
+      <circle cx="66" cy="52" r="4.5" fill="#C0405F"/>`);
+    case 5: return s(`
+      <rect x="16" y="66" width="68" height="20" rx="6" fill="#F3A8C0"/>
+      <rect x="24" y="48" width="52" height="20" rx="6" fill="#FDFAF8"/>
+      <rect x="32" y="30" width="36" height="20" rx="6" fill="#F3A8C0"/>
+      <path d="M16 70 q8 8 17 0 q9 8 18 0 q9 8 18 0 q8 8 15 0" fill="none" stroke="#FDFAF8" stroke-width="4"/>
+      <rect x="47" y="14" width="6" height="16" rx="3" fill="#D9A24A"/>
+      <path d="M50 6 C56 12 54 16 50 16 C46 16 44 12 50 6 Z" fill="#E8A43C"/>
+      <circle cx="34" cy="40" r="4" fill="#C0405F"/>
+      <circle cx="66" cy="40" r="4" fill="#C0405F"/>`);
+  }
+}
+
+/* лестница в описании */
+const ladder = document.getElementById('ladder');
+SWEETS.forEach((sw, i) => {
+  const li = document.createElement('li');
+  li.innerHTML = `<span class="pic">${sweetSVG(i)}</span>`
+    + `<span><b>${sw.name}</b><em>${sw.note}</em></span>`
+    + (sw.pct ? `<span class="pc">${sw.pct}%</span>` : '<span class="pc">—</span>');
+  ladder.appendChild(li);
+});
+
+/* ═══ 2. Поле ═══ */
+const COLS = 5, ROWS = 5, CELLS = COLS * ROWS, STOCK = 36;
+
+const gridEl  = document.getElementById('grid');
+const queueEl = document.getElementById('queue');
+const leftEl  = document.getElementById('score') && document.getElementById('left');
+const scoreEl = document.getElementById('score');
+const bestEl  = document.getElementById('best');
+const veil    = document.getElementById('veil');
+
+let board = [], stock = [], score = 0, best = -1, locked = true;
+
+const cellNodes = [];
+for (let i = 0; i < CELLS; i++){
+  const d = document.createElement('div');
+  d.className = 'cell';
+  d.dataset.i = i;
+  gridEl.appendChild(d);
+  cellNodes.push(d);
+}
+
+function paint(){
+  board.forEach((t, i) => {
+    const el = cellNodes[i];
+    el.innerHTML = t === null ? '' : sweetSVG(t);
+    el.classList.toggle('busy', t !== null);
+  });
+  leftEl.textContent = stock.length;
+  scoreEl.textContent = score;
+  bestEl.textContent = best < 0 ? '—' : SWEETS[best].name;
+
+  queueEl.innerHTML = '';
+  stock.slice(0, 5).forEach((t, n) => {
+    const s = document.createElement('div');
+    s.className = 'slot' + (n === 0 ? ' head' : ' faded');
+    s.innerHTML = sweetSVG(t);
+    if (n === 0) s.id = 'head';
+    queueEl.appendChild(s);
+  });
+}
+
+/* ═══ 3. Перетаскивание ═══
+   Один обработчик на всю зону: запоминаем источник,
+   за пальцем едет призрак, на отпускании ищем клетку под ним. */
+let from = null, ghost = null, moved = false;
+
+function svgOf(src){
+  return src.kind === 'stock' ? sweetSVG(stock[0]) : sweetSVG(board[src.i]);
+}
+
+const blockScroll = e => e.preventDefault();
+
+function beginDrag(e, src){
+  from = src; moved = false;
+  document.addEventListener('pointermove', onMove);
+  document.addEventListener('pointerup', onUp);
+  document.addEventListener('pointercancel', endDrag);
+  /* пока тянем — запрещаем браузеру трактовать движение как прокрутку */
+  document.addEventListener('touchmove', blockScroll, { passive:false });
+}
+
+function endDrag(){
+  document.removeEventListener('pointermove', onMove);
+  document.removeEventListener('pointerup', onUp);
+  document.removeEventListener('pointercancel', endDrag);
+  document.removeEventListener('touchmove', blockScroll);
+  cellNodes.forEach(c => c.classList.remove('aim', 'lift'));
+  if (ghost){ ghost.remove(); ghost = null; }
+  from = null;
+}
+
+function onMove(e){
+  if (!from) return;
+  if (!moved){
+    const d = Math.hypot(e.clientX - from.x, e.clientY - from.y);
+    if (d < 10) return;
+    moved = true;
+    ghost = document.createElement('div');
+    ghost.className = 'ghost';
+    ghost.innerHTML = svgOf(from);
+    document.body.appendChild(ghost);
+    if (from.kind === 'cell') cellNodes[from.i].classList.add('lift');
+  }
+  ghost.style.left = e.clientX + 'px';
+  ghost.style.top  = e.clientY + 'px';
+
+  cellNodes.forEach(c => c.classList.remove('aim'));
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const cell = el && el.closest && el.closest('.cell');
+  if (cell && allowed(from, +cell.dataset.i)) cell.classList.add('aim');
+}
+
+function onUp(e){
+  const src = from, dragged = moved;
+  endDrag();
+  if (!src || !dragged) return;
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const cell = el && el.closest && el.closest('.cell');
+  if (cell) drop(src, +cell.dataset.i);
+}
+
+function allowed(src, to){
+  const val = src.kind === 'stock' ? stock[0] : board[src.i];
+  if (val === undefined || val === null) return false;
+  if (src.kind === 'cell' && src.i === to) return false;
+  if (board[to] === null) return true;
+  return board[to] === val && val < SWEETS.length - 1;
+}
+
+function drop(src, to){
+  if (!allowed(src, to)) return;
+  const val = src.kind === 'stock' ? stock.shift() : board[src.i];
+  if (src.kind === 'cell') board[src.i] = null;
+
+  if (board[to] === null){
+    board[to] = val;
+  } else {
+    const grown = val + 1;
+    board[to] = grown;
+    score += grown * grown * 3;
+    if (grown > best) best = grown;
+    cellNodes[to].classList.remove('pop');
+    void cellNodes[to].offsetWidth;
+    cellNodes[to].classList.add('pop');
+    buzz();
+  }
+  paint();
+  checkEnd();
+}
+
+function buzz(){
+  try{
+    const tg = window.Telegram && window.Telegram.WebApp;
+    tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred('light');
+  }catch(e){}
+}
+
+gridEl.addEventListener('pointerdown', e => {
+  if (locked) return;
+  const cell = e.target.closest('.cell');
+  if (!cell) return;
+  const i = +cell.dataset.i;
+  if (board[i] === null) return;
+  e.preventDefault();
+  beginDrag(e, { kind:'cell', i, x:e.clientX, y:e.clientY });
+});
+
+queueEl.addEventListener('pointerdown', e => {
+  if (locked) return;
+  const head = e.target.closest('.head');
+  if (!head || !stock.length) return;
+  e.preventDefault();
+  beginDrag(e, { kind:'stock', x:e.clientX, y:e.clientY });
+});
+
+/* ═══ 4. Конец партии ═══ */
+const hasPair = () => {
+  const seen = new Set();
+  for (const t of board){
+    if (t === null || t === SWEETS.length - 1) continue;
+    if (seen.has(t)) return true;
+    seen.add(t);
+  }
+  return false;
+};
+const hasRoom = () => board.some(t => t === null);
+
+function checkEnd(){
+  if (best === SWEETS.length - 1) return finish('Торт собран! Выше некуда.');
+  if (!stock.length && !hasPair()) return finish('Запас кончился, складывать больше нечего.');
+  if (!hasRoom() && !hasPair()) return finish('Доска забита, свободных ходов не осталось.');
+}
+
+function finish(why){
+  locked = true;
+  let pct = 5;
+  for (let i = SWEETS.length - 1; i >= 0; i--)
+    if (SWEETS[i].pct && best >= i){ pct = SWEETS[i].pct; break; }
+
+  document.getElementById('big').innerHTML = sweetSVG(Math.max(0, best));
+  document.getElementById('fin').textContent = 'Скидка ' + pct + '% на заказ';
+  document.getElementById('say').textContent =
+    why + ' Лучшая сладость: ' + (best < 0 ? 'ни одной' : SWEETS[best].name) + ', очков ' + score + '.';
+  document.getElementById('code').textContent =
+    'GLAZUR-' + pct + '-' + String(Math.floor(Math.random() * 9000) + 1000);
+  document.getElementById('dim').classList.add('on');
+  document.getElementById('again').focus();
+}
+
+/* ═══ 5. Старт ═══ */
+function start(){
+  board = Array(CELLS).fill(null);
+  stock = [];
+  for (let i = 0; i < STOCK; i++){
+    const r = Math.random();
+    stock.push(r < 0.70 ? 0 : r < 0.95 ? 1 : 2);
+  }
+  score = 0; best = -1;
+  paint();
+  veil.classList.add('off');
+  locked = false;
+}
+
+document.getElementById('play').addEventListener('click', start);
+document.getElementById('again').addEventListener('click', () => {
+  document.getElementById('dim').classList.remove('on');
+  veil.classList.remove('off');
+  start();
+});
+document.getElementById('dim').addEventListener('click', () =>
+  document.getElementById('dim').classList.remove('on'));
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('dim').classList.remove('on');
+});
+
+board = Array(CELLS).fill(null);
+paint();
+</script>
+
+<script>
+/* Связка с Telegram */
+const tgApp = window.Telegram && window.Telegram.WebApp;
+if (tgApp){
+  tgApp.ready();
+  tgApp.expand();
+  try{
+    tgApp.setHeaderColor('#2E1D1B');
+    tgApp.setBackgroundColor('#EFE7E2');
+  }catch(e){}
+  try{
+    tgApp.BackButton.show();
+    tgApp.BackButton.onClick(() => { location.href = 'index.html'; });
+  }catch(e){}
+}
+</script>
+</body>
+</html>
